@@ -1,0 +1,21 @@
+name = "meat"
+version = "0.1.0"
+keywords = ["math", "information-theory"]
+defaultTargets = ["Meat"]
+lintDriver = "batteries/runLinter"
+lintDriverArgs = ["Meat"]
+
+[leanOptions]
+pp.unicode.fun = true
+autoImplicit = false
+relaxedAutoImplicit = false
+weak.linter.mathlibStandardSet = true
+weak.linter.style.header = false
+
+[[require]]
+name = "mathlib"
+scope = "leanprover-community"
+rev = "v4.35.0"
+
+[[lean_lib]]
+name = "Meat"
