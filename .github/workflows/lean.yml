@@ -30,7 +30,7 @@ jobs:
           typst-version: 0.15.1
       - name: Build the book
         run: |
-          rev=$(git log -1 --format=%H -- Meat scripts book lakefile.toml lake-manifest.json lean-toolchain ':(exclude)book/meat.pdf')
+          rev=$(git log -1 --format=%H -- Meat scripts book lakefile.toml lake-manifest.json lean-toolchain)
           SOURCE_DATE_EPOCH=$(git log -1 --format=%ct "$rev") typst compile --root . \
             --input strict=true --input rev="$rev" book/main.typ book/meat.pdf
       - uses: actions/upload-artifact@v4
@@ -45,23 +45,10 @@ jobs:
           else
             echo "minor=false" >> "$GITHUB_OUTPUT"
           fi
-      - name: Commit the book
-        if: steps.version.outputs.minor == 'true'
-        run: |
-          cp book/meat.pdf "$RUNNER_TEMP/meat.pdf"
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git fetch origin main
-          git checkout -B main origin/main
-          cp "$RUNNER_TEMP/meat.pdf" book/meat.pdf
-          git add book/meat.pdf
-          git diff --cached --quiet && exit 0
-          git commit -m "Update book PDF for ${GITHUB_REF_NAME}"
-          git push origin main
       - name: Release
         if: steps.version.outputs.minor == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" "$RUNNER_TEMP/meat.pdf#meat.pdf" \
+          gh release create "$GITHUB_REF_NAME" book/meat.pdf \
             --title "$GITHUB_REF_NAME" --generate-notes --verify-tag
