@@ -3,6 +3,7 @@ name: Lean
 on:
   push:
     branches: [main]
+    tags: ['v*']
   pull_request:
   workflow_dispatch:
 
@@ -36,13 +37,31 @@ jobs:
         with:
           name: meat-pdf
           path: book/meat.pdf
-      - name: Commit the book
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      - name: Detect a minor release
+        id: version
         run: |
+          if [[ "$GITHUB_REF" =~ ^refs/tags/v0\.[1-9][0-9]*\.0$ ]]; then
+            echo "minor=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "minor=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Commit the book
+        if: steps.version.outputs.minor == 'true'
+        run: |
+          cp book/meat.pdf "$RUNNER_TEMP/meat.pdf"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git checkout -B main origin/main
+          cp "$RUNNER_TEMP/meat.pdf" book/meat.pdf
           git add book/meat.pdf
           git diff --cached --quiet && exit 0
-          git commit -m "Update book PDF"
-          git pull --rebase origin main
-          git push origin HEAD:main
+          git commit -m "Update book PDF for ${GITHUB_REF_NAME}"
+          git push origin main
+      - name: Release
+        if: steps.version.outputs.minor == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" "$RUNNER_TEMP/meat.pdf#meat.pdf" \
+            --title "$GITHUB_REF_NAME" --generate-notes --verify-tag
