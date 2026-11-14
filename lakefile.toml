@@ -2,7 +2,7 @@ name = "meat"
 version = "0.1.0"
 keywords = ["math", "information-theory"]
 defaultTargets = ["Meat"]
-lintDriver = "batteries/runLinter"
+lintDriver = "lint"
 lintDriverArgs = ["Meat"]
 
 [leanOptions]
@@ -19,3 +19,8 @@ rev = "v4.35.0"
 
 [[lean_lib]]
 name = "Meat"
+
+[[lean_exe]]
+name = "lint"
+root = "scripts.Lint"
+supportInterpreter = true
