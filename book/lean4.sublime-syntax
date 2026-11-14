@@ -1,0 +1,38 @@
+%YAML 1.2
+---
+name: Lean 4
+file_extensions: [lean]
+scope: source.lean4
+contexts:
+  main:
+    - match: '/-'
+      push: block_comment
+    - match: '--.*$'
+      scope: comment.line.lean4
+    - match: '"'
+      push: string
+    - match: '\b(theorem|lemma|def|abbrev|structure|class|inductive|instance|example|where|extends|noncomputable|private|protected|namespace|section|end|variable|open|scoped|import|universe|notation|notation3|attribute|set_option|deriving)\b'
+      scope: keyword.declaration.lean4
+    - match: '\b(by|fun|let|have|show|from|if|then|else|match|with|do|return|for|in|at|calc)\b'
+      scope: keyword.control.lean4
+    - match: '\bsorry\b'
+      scope: invalid.illegal.lean4
+    - match: '\b(Type|Prop|Sort)\b'
+      scope: storage.type.lean4
+    - match: '\b[0-9]+\b'
+      scope: constant.numeric.lean4
+    - match: '@\['
+      push: attribute
+  block_comment:
+    - meta_scope: comment.block.lean4
+    - match: '-/'
+      pop: true
+  string:
+    - meta_scope: string.quoted.double.lean4
+    - match: '\\.'
+    - match: '"'
+      pop: true
+  attribute:
+    - meta_scope: meta.attribute.lean4
+    - match: '\]'
+      pop: true
