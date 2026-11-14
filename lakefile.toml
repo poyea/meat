@@ -20,6 +20,15 @@ rev = "v4.35.0"
 [[lean_lib]]
 name = "Meat"
 
+[[lean_lib]]
+name = "Scripts"
+roots = ["scripts.Typst"]
+
+[[lean_exe]]
+name = "manifest"
+root = "scripts.Manifest"
+supportInterpreter = true
+
 [[lean_exe]]
 name = "lint"
 root = "scripts.Lint"
