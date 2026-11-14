@@ -6,11 +6,43 @@ on:
   pull_request:
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: leanprover/lean-action@v1
         with:
           lint: true
+      - name: Export the Lean manifest
+        run: lake exe manifest
+      - uses: typst-community/setup-typst@v4
+        with:
+          typst-version: 0.15.1
+      - name: Build the book
+        run: |
+          rev=$(git log -1 --format=%H -- Meat scripts book lakefile.toml lake-manifest.json lean-toolchain ':(exclude)book/meat.pdf')
+          SOURCE_DATE_EPOCH=$(git log -1 --format=%ct "$rev") typst compile --root . \
+            --input strict=true --input rev="$rev" book/main.typ book/meat.pdf
+      - uses: actions/upload-artifact@v4
+        with:
+          name: meat-pdf
+          path: book/meat.pdf
+      - name: Commit the book
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add book/meat.pdf
+          git diff --cached --quiet && exit 0
+          git commit -m "Update book PDF"
+          git pull --rebase origin main
+          git push origin HEAD:main
