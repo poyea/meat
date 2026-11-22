@@ -57,3 +57,4 @@ import Meat.Continuous.AWGNCapacity
 import Meat.Testing.Stein
 import Meat.Testing.Sanov
 import Meat.Testing.Chernoff
+import Meat.Open.EntropyRegion
