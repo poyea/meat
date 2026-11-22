@@ -21,3 +21,4 @@ import Meat.Channel.Basic
 import Meat.Channel.Achievability
 import Meat.Channel.Converse
 import Meat.Channel.CodingTheorem
+import Meat.Channel.MultipleAccess
