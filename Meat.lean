@@ -60,3 +60,4 @@ import Meat.Testing.Chernoff
 import Meat.Open.EntropyRegion
 import Meat.Open.GraphCapacity
 import Meat.Open.Deletion
+import Meat.Open.NetworkCapacity
