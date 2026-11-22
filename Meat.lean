@@ -1,1 +1,1 @@
-def hello := "world"
+import Meat.Shannon.Entropy
