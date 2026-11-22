@@ -39,3 +39,4 @@ import Meat.Continuous.AWGN
 import Meat.Continuous.AWGNConverse
 import Meat.Continuous.AWGNAchievability
 import Meat.Continuous.InfoBound
+import Meat.Continuous.AWGNQuantization
