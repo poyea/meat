@@ -16,3 +16,4 @@ import Meat.Shannon.Conditional
 import Meat.Channel.Basic
 import Meat.Channel.Achievability
 import Meat.Channel.Converse
+import Meat.Channel.CodingTheorem
