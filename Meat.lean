@@ -11,3 +11,5 @@ import Meat.Shannon.Product
 import Meat.Shannon.Iid
 import Meat.Shannon.Binning
 import Meat.Shannon.Superposition
+import Meat.Shannon.TypicalIntersection
+import Meat.Shannon.Conditional
