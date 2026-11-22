@@ -8,5 +8,6 @@
 #include "chapters/network.typ"
 #include "chapters/continuous.typ"
 #include "chapters/testing.typ"
+#include "chapters/open.typ"
 
 #coverage()
