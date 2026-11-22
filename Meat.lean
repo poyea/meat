@@ -63,3 +63,4 @@ import Meat.Open.Deletion
 import Meat.Open.NetworkCapacity
 import Meat.Open.DistributedLossy
 import Meat.Open.DistributedLossyConverse
+import Meat.Open.MultipleDescriptions
