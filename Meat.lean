@@ -36,3 +36,4 @@ import Meat.Continuous.Divergence
 import Meat.Continuous.Gaussian
 import Meat.Continuous.MaxEntropy
 import Meat.Continuous.AWGN
+import Meat.Continuous.AWGNConverse
