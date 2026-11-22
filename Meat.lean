@@ -13,3 +13,4 @@ import Meat.Shannon.Binning
 import Meat.Shannon.Superposition
 import Meat.Shannon.TypicalIntersection
 import Meat.Shannon.Conditional
+import Meat.Channel.Basic
