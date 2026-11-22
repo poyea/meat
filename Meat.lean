@@ -5,3 +5,4 @@ import Meat.Shannon.Inequalities
 import Meat.Shannon.Divergence
 import Meat.Shannon.Markov
 import Meat.Shannon.Fano
+import Meat.Shannon.Average
