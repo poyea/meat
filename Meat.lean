@@ -20,6 +20,7 @@ import Meat.Source.SlepianWolfTheorem
 import Meat.Source.Lossless
 import Meat.Source.Prefix
 import Meat.Source.Huffman
+import Meat.Source.LosslessVariable
 import Meat.Channel.Basic
 import Meat.Channel.Achievability
 import Meat.Channel.Converse
