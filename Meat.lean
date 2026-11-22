@@ -18,6 +18,7 @@ import Meat.Source.SlepianWolfAchievability
 import Meat.Source.SlepianWolfConverse
 import Meat.Source.SlepianWolfTheorem
 import Meat.Source.Lossless
+import Meat.Source.Prefix
 import Meat.Channel.Basic
 import Meat.Channel.Achievability
 import Meat.Channel.Converse
