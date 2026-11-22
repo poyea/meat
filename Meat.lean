@@ -8,3 +8,4 @@ import Meat.Shannon.Fano
 import Meat.Shannon.Average
 import Meat.Shannon.Typical
 import Meat.Shannon.Product
+import Meat.Shannon.Iid
