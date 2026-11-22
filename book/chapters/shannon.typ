@@ -1362,3 +1362,47 @@ The upper bound needs no assumption, because $q^n (T(P)) = 0$ when the real dive
   The ratio $m^k \/ e^(m eta \/ 2)$ tends to $0$, so $(n + 1)^k <= e^((n + 1) eta \/ 2) <= e^(n eta)$ for large $n$.
   The other two statements follow from taking logarithms.
 ]
+
+== Chain rules
+#source("Meat.Shannon.ChainRule")
+
+For a sequence $y = (y_1, dots, y_n)$ and an index $i$, the prefix $y^(i - 1) := (y_1, dots, y_(i - 1))$ is the part of $y$ before position $i$.
+The chain rules write the entropy of a sequence as a sum of conditional entropies, one for each letter given the letters before it.
+No independence is needed: the identities hold for every joint law.
+
+#definition("Prefix", lean: "Meat.seqPrefix")[
+  For $y : [n] -> S$ and $i in [n]$, $y^(i - 1) : [i - 1] -> S$ is the map $j |-> y_j$.
+]
+
+#lemma(
+  "Relabeling the condition and the pair rule",
+  lean: ("Meat.condEntropy_cond_of_injective", "Meat.condEntropy_pair_eq_add"),
+)[
+  If $Z' = e(Z)$ for an injective map $e$, then $H(X given Z') = H(X given Z)$.
+  Also $H(X, Y given Z) = H(X given Z) + H(Y given X, Z)$.
+][
+  Both sides are differences of joint entropies.
+  The joint entropies are equal by injective relabeling.
+]
+
+#theorem(
+  "Chain rules",
+  lean: (
+    "Meat.condEntropy_eq_sum",
+    "Meat.entropy_eq_sum",
+    "Meat.condMutualInfo_eq_sum",
+    "Meat.mutualInfo_eq_sum",
+  ),
+)[
+  For a random sequence $Y^n$ and random variables $W$ and $Z$,
+  $ H(Y^n given W) = sum_(i = 1)^n H(Y_i given W, Y^(i - 1)), quad H(Y^n) = sum_(i = 1)^n H(Y_i given Y^(i - 1)), $
+  $ I(Y^n ; W given Z) = sum_(i = 1)^n I(Y_i ; W given Z, Y^(i - 1)), quad I(Y^n ; W) = sum_(i = 1)^n I(Y_i ; W given Y^(i - 1)). $
+  The unconditional forms assume a probability measure.
+][
+  Induction on $n$.
+  The map $y |-> (y^(n - 1), y_n)$ is injective, so $H(Y^n given W) = H(Y^(n - 1), Y_n given W)$.
+  The pair rule gives $H(Y^(n - 1) given W) + H(Y_n given Y^(n - 1), W)$.
+  The first term is the sum for $n - 1$, and the second term is the last summand after a swap of the condition.
+  For $H(Y^n)$, take $W$ constant: conditioning on a constant does nothing.
+  For mutual information, write $I(Y^n ; W given Z) = H(Y^n given Z) - H(Y^n given W, Z)$ and subtract the two chain rules term by term.
+]
