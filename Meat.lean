@@ -33,3 +33,4 @@ import Meat.Network.Linear
 import Meat.Network.Multicast
 import Meat.Continuous.DifferentialEntropy
 import Meat.Continuous.Divergence
+import Meat.Continuous.Gaussian
