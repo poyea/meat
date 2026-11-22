@@ -6,3 +6,4 @@ import Meat.Shannon.Divergence
 import Meat.Shannon.Markov
 import Meat.Shannon.Fano
 import Meat.Shannon.Average
+import Meat.Shannon.Typical
