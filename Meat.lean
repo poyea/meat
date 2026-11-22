@@ -53,3 +53,4 @@ import Meat.Continuous.AWGNAchievability
 import Meat.Continuous.InfoBound
 import Meat.Continuous.AWGNQuantization
 import Meat.Continuous.AWGNCapacity
+import Meat.Testing.Stein
