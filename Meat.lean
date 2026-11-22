@@ -16,6 +16,7 @@ import Meat.Shannon.Conditional
 import Meat.Source.SlepianWolf
 import Meat.Source.SlepianWolfAchievability
 import Meat.Source.SlepianWolfConverse
+import Meat.Source.SlepianWolfTheorem
 import Meat.Channel.Basic
 import Meat.Channel.Achievability
 import Meat.Channel.Converse
