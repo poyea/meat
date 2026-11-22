@@ -17,6 +17,7 @@ import Meat.Shannon.LargeNumbers
 import Meat.Shannon.LogSum
 import Meat.Shannon.Covering
 import Meat.Shannon.Types
+import Meat.Shannon.ChainRule
 import Meat.Source.SlepianWolf
 import Meat.Source.SlepianWolfAchievability
 import Meat.Source.SlepianWolfConverse
