@@ -25,3 +25,4 @@ import Meat.Channel.MultipleAccess
 import Meat.Channel.MultipleAccessAchievability
 import Meat.Channel.MultipleAccessConverse
 import Meat.Channel.MultipleAccessTheorem
+import Meat.Channel.Broadcast
