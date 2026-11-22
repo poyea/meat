@@ -1115,3 +1115,250 @@ The third is a covering lemma for jointly typical sets.
   Sum over $x$.
   The sums of $p_1^n (x)$ and of $B(x)$ are $1$ and $p^n (J)$.
 ]
+
+== The method of types
+#source("Meat.Shannon.Types")
+
+The method of types groups the sequences in $S^n$ by their empirical distribution.
+In this section, $S$ is a finite set with measurable singletons, and $q$ is a law on $S$.
+A sequence is a map $x : {1, dots, n} -> S$, and $q^n (x)$ is its product probability, as in the section on typical sequences.
+
+#definition("Counts", lean: "Meat.typeCount")[
+  For a sequence $x$ and $s in S$, the count of $s$ in $x$ is
+  $ N(s given x) := |{i : x_i = s}|. $
+]
+
+#lemma(
+  "Counts and sums",
+  lean: (
+    "Meat.sum_typeCount",
+    "Meat.typeCount_le",
+    "Meat.prod_comp_eq_prod_pow",
+    "Meat.sum_comp_eq_sum_typeCount_mul",
+    "Meat.prod_comp_eq_exp",
+    "Meat.typeCount_cons",
+  ),
+)[
+  For every sequence $x$ of length $n$, $sum_s N(s given x) = n$ and $N(s given x) <= n$.
+  For every $f : S -> M$ into a commutative monoid, $product_i f(x_i) = product_s f(s)^(N(s given x))$.
+  For every $f : S -> RR$, $sum_i f(x_i) = sum_s N(s given x) f(s)$.
+  If $w(x_i) > 0$ for every $i$, then $product_i w(x_i) = exp(sum_s N(s given x) log w(s))$.
+  For $a in S$ and a sequence $y$ of length $n$, the sequence $(a, y)$ of length $n + 1$ has $N(s given (a, y)) = N(s given y) + [a = s]$.
+][
+  Group the coordinates $i$ by the value $x_i$.
+  For the exponential form, write each factor as $exp(log w(x_i))$ and use the sum formula.
+  For the last statement, the first coordinate adds $1$ to the count of $a$.
+]
+
+#theorem(
+  "Number of sequences with given counts",
+  lean: ("Meat.card_typeCount_eq_mul_prod_factorial", "Meat.exists_typeCount_eq"),
+)[
+  Let $k : S -> NN$ with $sum_s k(s) = n$.
+  Then the number of sequences $x$ of length $n$ with $N(dot given x) = k$ satisfies
+  $ |{x : N(dot given x) = k}| product_s k(s)! = n!. $
+  In particular, such a sequence exists.
+][
+  Induction on $n$.
+  For $n = 0$, $k = 0$, and the empty sequence is the only sequence.
+  For $n + 1$, split $x = (a, y)$.
+  By the count lemma, $N(dot given (a, y)) = k$ holds if and only if $k(a) >= 1$ and $N(dot given y) = k - e_a$, where $e_a$ is the indicator of $a$.
+  The counts $k - e_a$ sum to $n$, and $product_s k(s)! = k(a) product_s (k - e_a)(s)!$.
+  By induction, the number of sequences that start with $a$, times $product_s k(s)!$, is $k(a) n!$.
+  This is also true if $k(a) = 0$.
+  Sum over $a$: the result is $(n + 1) n! = (n + 1)!$.
+  The right side is positive, so the set is not empty.
+]
+
+#lemma("Factorial inequality", lean: "Meat.factorial_mul_pow_le")[
+  For all $j, k in NN$, $k! k^j <= j! k^k$.
+][
+  If $j <= k$, then $k! = j! k (k - 1) dots (j + 1) <= j! k^(k - j)$.
+  If $j = k + m$, then $j! >= k! (k + 1)^m >= k! k^m$.
+]
+
+#definition(
+  "Type of a sequence",
+  lean: (
+    "Meat.seqType",
+    "Meat.seqType_apply_singleton",
+    "Meat.seqType_real",
+    "Meat.isProbabilityMeasure_seqType",
+  ),
+)[
+  The type of a sequence $x$ of length $n$ is the measure
+  $ P_x := sum_s (N(s given x)) / n delta_s $
+  on $S$, where $delta_s$ is the Dirac measure at $s$.
+  So $P_x ({s}) = N(s given x) \/ n$.
+  If $n > 0$, then $P_x$ is a probability measure.
+]
+
+For $n = 0$, Lean has $N(s given x) \/ 0 = 0$, so $P_x$ is the zero measure.
+The results below are true also for $n = 0$, unless they say otherwise.
+
+#definition(
+  "Types and type classes",
+  lean: (
+    "Meat.typeSet",
+    "Meat.typeClass",
+    "Meat.mem_typeSet",
+    "Meat.mem_typeClass",
+    "Meat.seqType_eq_seqType_iff",
+  ),
+)[
+  The set of types of length $n$ is $cal(P)_n := {P_x : x in S^n}$.
+  The type class of a measure $P$ is $T(P) := {x in S^n : P_x = P}$.
+  Two sequences have the same type if and only if they have the same counts.
+]
+
+#theorem("Number of types", lean: "Meat.card_typeSet_le")[
+  $ |cal(P)_n| <= (n + 1)^(|S|). $
+][
+  The type $P_x$ is a function of the counts $N(dot given x)$.
+  Each count is in ${0, dots, n}$, so there are at most $(n + 1)^(|S|)$ count vectors.
+]
+
+#lemma(
+  "Absolute continuity on a finite set",
+  lean: (
+    "Meat.absolutelyContinuous_iff_singleton",
+    "Meat.PMF.toMeasure_real_singleton",
+    "Meat.seqType_absolutelyContinuous_iff",
+  ),
+)[
+  On a countable set with measurable singletons, $nu << rho$ if and only if $rho({s}) = 0$ implies $nu({s}) = 0$ for every $s$.
+  The measure $nu_q$ of a law $q$ has $nu_q ({s}) = q(s)$.
+  So $P_x << nu_q$ if and only if $q(x_i) != 0$ for every $i$.
+][
+  A set of measure $0$ is the countable union of its singletons.
+  The type has $P_x ({s}) > 0$ exactly when $s$ occurs in $x$.
+]
+
+#lemma(
+  "Entropy plus divergence",
+  lean: ("Meat.measureEntropy_add_klDiv", "Meat.klDiv_eq_sum_sub"),
+)[
+  Let $rho$ be a finite measure and $nu << rho$.
+  Then
+  $ H(nu) + D(nu || rho) = -sum_s nu_s log rho_s, quad D(nu || rho) = sum_s (nu_s log nu_s - nu_s log rho_s). $
+][
+  If $nu_s = 0$, each term is $0$.
+  If $nu_s > 0$, then $rho_s > 0$ by absolute continuity, so $log (nu_s \/ rho_s) = log nu_s - log rho_s$.
+  Then $eta(nu_s) + nu_s log (nu_s \/ rho_s) = -nu_s log rho_s$.
+]
+
+Without $nu << rho$, the Lean sum has the term $nu_s log 0 = 0$ where $rho_s = 0$, and both identities can fail.
+
+#theorem(
+  "Probability of a sequence",
+  lean: ("Meat.iidProb_eq_exp", "Meat.iidProb_eq_zero", "Meat.prod_seqType_real"),
+)[
+  Let $x$ be a sequence of length $n$.
+  If $P_x << nu_q$, then
+  $ q^n (x) = e^(-n (H(P_x) + D(P_x || nu_q))). $
+  Otherwise $q^n (x) = 0$.
+  In particular, with $q$ replaced by the weights of $P_x$, $product_i P_x ({x_i}) = e^(-n H(P_x))$.
+][
+  If $P_x << nu_q$, every $q(x_i)$ is positive.
+  By the exponential form of the count lemma, $q^n (x) = exp(sum_s N(s given x) log q_s)$.
+  Since $N(s given x) = n P_x ({s})$, the exponent is $-n (H(P_x) + D(P_x || nu_q))$ by the lemma on entropy plus divergence.
+  Otherwise some $q(x_i)$ is $0$, so the product is $0$.
+  The last statement is the same computation with $D(P_x || P_x) = 0$.
+]
+
+This is the support convention: $D(P || q)$ is the true divergence only for $P << nu_q$, and sequences of other types have probability $0$.
+
+#lemma(
+  "Sums over type classes",
+  lean: ("Meat.sum_seqType_real", "Meat.sum_typeSet_sum_typeClass"),
+)[
+  If $n > 0$, then $sum_s P_x ({s}) = 1$.
+  For every $f : S^n -> RR$,
+  $ sum_(P in cal(P)_n) sum_(x in T(P)) f(x) = sum_x f(x). $
+][
+  The type of $x$ is a probability measure.
+  The type classes of the types in $cal(P)_n$ partition $S^n$.
+]
+
+#lemma("The type class is the most likely class", lean: "Meat.card_mul_prod_pow_le")[
+  Let $x$ and $y$ be sequences of length $n$ with counts $k$ and $j$.
+  Then
+  $ |{z : N(dot given z) = j}| product_s k(s)^(j(s)) <= |{z : N(dot given z) = k}| product_s k(s)^(k(s)). $
+][
+  Multiply both sides by $product_s j(s)! product_s k(s)!$.
+  By the counting theorem, the left side becomes $n! product_s k(s)! k(s)^(j(s))$ and the right side becomes $n! product_s j(s)! k(s)^(k(s))$.
+  Compare the factors with the factorial inequality.
+]
+
+Divide both sides by $n^n = product_s n^(j(s)) = product_s n^(k(s))$.
+With $P := P_x$, the left side is the probability of $T(P_y)$ under $P^n$, and the right side is the probability of $T(P)$ under $P^n$.
+
+#theorem(
+  "Size of a type class",
+  lean: ("Meat.card_typeClass_le", "Meat.card_typeClass_ge"),
+)[
+  For every measure $P$ on $S$,
+  $ |T(P)| <= e^(n H(P)). $
+  If $P in cal(P)_n$, then
+  $ e^(n H(P)) / (n + 1)^(|S|) <= |T(P)|. $
+][
+  If $T(P)$ is empty, the upper bound is clear.
+  Otherwise $P = P_x$ for some $x$.
+  Let $P^n (z) := product_i P({z_i})$.
+  These weights sum to $1$, and each $z in T(P)$ has $P^n (z) = e^(-n H(P))$.
+  So $|T(P)| e^(-n H(P)) <= 1$.
+  For the lower bound, split the total weight $1$ over the type classes.
+  By the previous lemma, each class has $P^n$ weight at most $|T(P)| e^(-n H(P))$.
+  So $1 <= |cal(P)_n| |T(P)| e^(-n H(P)) <= (n + 1)^(|S|) |T(P)| e^(-n H(P))$.
+]
+
+#theorem(
+  "Probability of a type class",
+  lean: ("Meat.sum_iidProb_typeClass_le", "Meat.le_sum_iidProb_typeClass"),
+)[
+  For every measure $P$ on $S$,
+  $ q^n (T(P)) <= e^(-n D(P || nu_q)). $
+  If $P in cal(P)_n$ and $P << nu_q$, then
+  $ e^(-n D(P || nu_q)) / (n + 1)^(|S|) <= q^n (T(P)). $
+][
+  If $P << nu_q$, every $x in T(P)$ has $q^n (x) = e^(-n H(P)) e^(-n D(P || nu_q))$.
+  Multiply by the size bounds of $T(P)$.
+  If $P$ is not absolutely continuous with respect to $nu_q$, every $x in T(P)$ has $q^n (x) = 0$.
+]
+
+The upper bound needs no assumption, because $q^n (T(P)) = 0$ when the real divergence has no meaning.
+
+#lemma("Continuity of the divergence", lean: "Meat.tendsto_klDiv")[
+  Let $rho$ be a finite measure, let $nu_k << rho$ for every $k$, and let $nu_k ({s}) -> w_s$ for every $s$.
+  Then
+  $ D(nu_k || rho) -> sum_s (w_s log w_s - w_s log rho_s). $
+][
+  By the lemma on entropy plus divergence, each $D(nu_k || rho)$ is a sum of the continuous functions $t |-> t log t - t log rho_s$ at $nu_k ({s})$.
+]
+
+#lemma("Approximation by types", lean: "Meat.exists_seq_typeCount_tendsto")[
+  Let $w : S -> [0, infinity)$ with $sum_s w_s = 1$.
+  Then there are sequences $x^((n))$ of length $n$ such that $N(s given x^((n))) = 0$ whenever $w_s = 0$, and $N(s given x^((n))) \/ n -> w_s$ for every $s$.
+][
+  Fix $s_0$ with $w_(s_0) > 0$.
+  Let $k_n (s) := floor(n w_s)$ for $s != s_0$, and give the rest $n - sum_(s != s_0) k_n (s) >= 0$ to $s_0$.
+  A sequence with these counts exists by the counting theorem.
+  For $s != s_0$, $floor(n w_s) \/ n -> w_s$, and $k_n (s_0) \/ n -> 1 - sum_(s != s_0) w_s = w_(s_0)$.
+]
+
+#lemma(
+  "Exponential rates",
+  lean: (
+    "Meat.eventually_pow_le_exp",
+    "Meat.le_neg_log_div_of_le_exp",
+    "Meat.neg_log_div_le_of_exp_le",
+  ),
+)[
+  For $k in NN$ and $eta > 0$, $(n + 1)^k <= e^(n eta)$ for all large $n$.
+  Let $n > 0$.
+  If $0 < y <= e^(-n c)$, then $c <= -1/n log y$.
+  If $e^(-n c) <= y$, then $-1/n log y <= c$.
+][
+  The ratio $m^k \/ e^(m eta \/ 2)$ tends to $0$, so $(n + 1)^k <= e^((n + 1) eta \/ 2) <= e^(n eta)$ for large $n$.
+  The other two statements follow from taking logarithms.
+]

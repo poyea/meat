@@ -7,5 +7,6 @@
 #include "chapters/channel.typ"
 #include "chapters/network.typ"
 #include "chapters/continuous.typ"
+#include "chapters/testing.typ"
 
 #coverage()
