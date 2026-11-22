@@ -15,3 +15,4 @@ import Meat.Shannon.TypicalIntersection
 import Meat.Shannon.Conditional
 import Meat.Channel.Basic
 import Meat.Channel.Achievability
+import Meat.Channel.Converse
