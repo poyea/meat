@@ -38,3 +38,4 @@ import Meat.Continuous.MaxEntropy
 import Meat.Continuous.AWGN
 import Meat.Continuous.AWGNConverse
 import Meat.Continuous.AWGNAchievability
+import Meat.Continuous.InfoBound
