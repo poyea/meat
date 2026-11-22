@@ -1044,3 +1044,74 @@ This is the reason for the last condition in the definition of $T_epsilon^((n)) 
   With $P$ and $Q$ the laws of $X$ and $Y$, $eta(P(s) Q(t)) = Q(t) eta(P(s)) + P(s) eta(Q(t))$, where $eta(x) := -x log x$.
   Sum over $s$ and $t$: $H(X, Y) = H(X) + H(Y)$.
 ]
+
+== Tools for lossy coding
+#source("Meat.Shannon.LargeNumbers")
+
+The rate-distortion theorem needs three more tools.
+The first is a weak law of large numbers for a function of an i.i.d. sequence.
+The second is the log-sum inequality for two terms.
+The third is a covering lemma for jointly typical sets.
+
+#theorem("Weak law of large numbers", lean: "Meat.tendsto_sum_iidProb_sum_le")[
+  Let $p$ be a probability mass function on a finite set $A$, let $f : A -> RR$, and let $m := sum_a p(a) f(a)$.
+  For every $epsilon > 0$,
+  $ sum_(x in A^n : sum_i f(x_i) <= n (m + epsilon)) p^n (x) -> 1 quad "as" n -> infinity. $
+][
+  This is the Chebyshev argument of the asymptotic equipartition property, with $f$ in place of $-log p$.
+  Let $Y(a) := f(a) - m$, so that $sum_a p(a) Y(a) = 0$.
+  Let $V := sum_a p(a) Y(a)^2$.
+  Under $p^n$, the cross terms $Y(x_i) Y(x_j)$ with $i != j$ have mean $0$, so the mean of $(sum_i Y(x_i))^2$ is $n V$.
+  If $sum_i f(x_i) > n (m + epsilon)$, then $sum_i Y(x_i) > n epsilon$, so $(sum_i Y(x_i))^2 > (n epsilon)^2$.
+  So for $n > 0$ the mass outside the set is at most $n V \/ (n epsilon)^2 = V \/ (epsilon^2 n)$.
+  The set has mass between $1 - V \/ (epsilon^2 n)$ and $1$.
+]
+
+#source("Meat.Shannon.LogSum")
+
+#theorem("Log-sum inequality", lean: "Meat.add_mul_log_div_add_le")[
+  Let $a_1, a_2, b_1, b_2 >= 0$, with $a_i = 0$ whenever $b_i = 0$.
+  Then
+  $ (a_1 + a_2) log (a_1 + a_2) / (b_1 + b_2) <= a_1 log a_1 / b_1 + a_2 log a_2 / b_2. $
+  In Lean, $x \/ 0 = 0$ and $log 0 = 0$, so the hypothesis on zeros is necessary.
+][
+  If $b_1 + b_2 = 0$, then $b_1 = b_2 = 0$, so $a_1 = a_2 = 0$ and both sides are $0$.
+  Otherwise let $B := b_1 + b_2 > 0$ and $phi(x) := x log x$, which is convex on $[0, infinity)$.
+  Apply convexity at the points $a_i \/ b_i$ with the weights $b_i \/ B$.
+  Since $a_i = 0$ when $b_i = 0$, $(b_i \/ B)(a_i \/ b_i) = a_i \/ B$ and $(b_i \/ B) phi(a_i \/ b_i) = a_i log(a_i \/ b_i) \/ B$.
+  So $phi((a_1 + a_2) \/ B) <= (a_1 log(a_1 \/ b_1) + a_2 log(a_2 \/ b_2)) \/ B$.
+  Multiply by $B$.
+]
+
+#source("Meat.Shannon.Covering")
+
+#lemma("An exponential bound", lean: "Meat.one_sub_mul_pow_le")[
+  Let $a <= 1$, $0 <= b <= 1$ and $k in NN$.
+  Then $(1 - a b)^k <= 1 - b + e^(-k a)$.
+][
+  The map $x |-> x^k$ is convex on $[0, infinity)$.
+  The point $1 - a b$ is the convex combination $(1 - b) dot 1 + b (1 - a)$ of $1$ and $1 - a >= 0$.
+  So $(1 - a b)^k <= (1 - b) + b (1 - a)^k <= 1 - b + (1 - a)^k$.
+  Finally $0 <= 1 - a <= e^(-a)$, so $(1 - a)^k <= e^(-k a)$.
+]
+
+#theorem("Covering lemma", lean: "Meat.sum_iidProb_mul_one_sub_pow_le")[
+  Let $p$ be a probability mass function on $S times T$ with marginals $p_1$ and $p_2$, and let $I := I(X; Y)$ for $(X, Y)$ with the law $p$.
+  Let $epsilon >= 0$, let $J subset.eq J_epsilon^((n)) (p)$, and let $k in NN$.
+  For $x in S^n$, let $Q(x) := sum_(y : (x, y) in J) p_2^n (y)$.
+  Then
+  $ sum_x p_1^n (x) (1 - Q(x))^k <= (1 - p^n (J)) + exp(-k e^(-n (I + 3 epsilon))). $
+][
+  The term $p_1^n (x) (1 - Q(x))^k$ is the probability that $x$ is drawn and that none of $k$ independent codewords drawn from $p_2^n$ is jointly typical with $x$.
+  Let $a := e^(-n (I + 3 epsilon))$, so $0 < a <= 1$ because $I >= 0$.
+  For $(x, y) in J$, the three typicality bounds give $p_1^n (x) >= e^(-n (H(p_1) + epsilon))$, $p_2^n (y) >= e^(-n (H(p_2) + epsilon))$ and $p^n (x, y) <= e^(-n (H(p) - epsilon))$.
+  Since $I = H(p_1) + H(p_2) - H(p)$, this gives $a p^n (x, y) <= p_1^n (x) p_2^n (y)$.
+  Fix $x$ and let $B(x) := sum_(y : (x, y) in J) p^n (x, y)$.
+  Then $0 <= B(x) <= p_1^n (x)$, by the marginal lemma, and $a B(x) <= p_1^n (x) Q(x)$.
+  If $p_1^n (x) = 0$, then $B(x) = 0$, and the term is $0$.
+  Otherwise let $b := B(x) \/ p_1^n (x) in [0, 1]$.
+  Then $a b <= Q(x) <= 1$, so $(1 - Q(x))^k <= (1 - a b)^k <= 1 - b + e^(-k a)$, by the exponential bound.
+  Multiply by $p_1^n (x)$: the term is at most $p_1^n (x) - B(x) + p_1^n (x) e^(-k a)$.
+  Sum over $x$.
+  The sums of $p_1^n (x)$ and of $B(x)$ are $1$ and $p^n (J)$.
+]

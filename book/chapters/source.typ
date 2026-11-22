@@ -749,3 +749,372 @@ For $|S| >= 2$ and a deterministic source, every prefix code with no empty codew
   For $n > 0$, divide by $n$: $H(p) \/ log D <= L_n^* \/ n <= H(p) \/ log D + 1 \/ n$.
   The upper bound tends to $H(p) \/ log D$.
 ]
+
+== Rate-distortion coding
+#source("Meat.Source.RateDistortion")
+
+A lossy code describes a source with fewer nats than lossless coding needs, at the cost of a distortion.
+In this section, $S$ is a finite source alphabet, $T$ is a finite and nonempty reproduction alphabet, and $p$ is a probability mass function on $S$.
+A distortion measure is a map $d : S times T -> RR$.
+Where the theorems need it, $d >= 0$.
+A finite $d$ is automatically bounded.
+Rates are in nats for each source symbol.
+
+#definition(
+  "Lossy code",
+  lean: ("Meat.LossyCode", "Meat.RateDistortion.blockDist", "Meat.LossyCode.distortion"),
+)[
+  A lossy code of length $n$ with $k$ indices is a pair of maps
+  $ f : S^n -> [k], quad g : [k] -> T^n. $
+  The per-letter distortion of $x in S^n$ and $y in T^n$ is $d_n (x, y) := (1 \/ n) sum_(i = 1)^n d(x_i, y_i)$, with $d_0 := 0$.
+  The expected distortion of the code is
+  $ D(f, g) := sum_(x in S^n) p^n (x) d_n (x, g(f(x))). $
+]
+
+#definition(
+  "Achievable pair",
+  lean: ("Meat.RateDistortion.Achievable", "Meat.RateDistortion.achievableRegion"),
+)[
+  A pair $(R, D) in RR^2$ is achievable for $p$ and $d$ if for every $epsilon > 0$ there exists $N in NN$ such that for every $n >= N$ there exist $k in NN$ with $k <= e^(n R)$ and a lossy code of length $n$ with $k$ indices and $D(f, g) <= D + epsilon$.
+  The achievable region $cal(A)(p, d)$ is the set of achievable pairs.
+]
+
+This is the standard formulation with an exact rate and $limsup_n D(f_n, g_n) <= D$.
+The slack $epsilon$ is on the distortion only.
+A slack on the rate as well would give the same closure.
+The encoder maps the nonempty set $S^n$ into $[k]$, so $k >= 1$, and an achievable pair has $R >= 0$.
+
+#definition(
+  "Test channels and the rate-distortion function",
+  lean: (
+    "Meat.RateDistortion.expDist",
+    "Meat.RateDistortion.minDist",
+    "Meat.RateDistortion.rdf",
+    "Meat.RateDistortion.rateRegion",
+  ),
+)[
+  A test channel is a channel $W : S -> cal(P)(T)$.
+  Let $(X, hat(X))$ have the law $p(s) W(t given s)$.
+  The expected distortion of $W$ is $E_W d := sum_(s, t) p(s) W(t given s) d(s, t)$, and its rate is $I_W (p) = I(X; hat(X))$.
+  The minimal distortion is $D_min := sum_s p(s) min_t d(s, t)$.
+  The information rate-distortion function is
+  $ R(D) := inf {I_W (p) : E_W d <= D}. $
+  The rate region is $cal(R)(p, d) := {(R, D) : D >= D_min, R(D) <= R}$.
+]
+
+In Lean, $R(D)$ is the real infimum `sInf`, which is $0$ on the empty set.
+The set is empty exactly when $D < D_min$.
+So $R(D)$ alone does not describe the region below $D_min$, and the rate region carries the condition $D >= D_min$ explicitly.
+For $D >= D_min$ the infimum is a minimum, by the compactness argument below.
+
+#definition("Channel from a matrix", lean: ("Meat.DMC.ofMatrix", "Meat.DMC.toReal_ofMatrix"))[
+  A matrix $w : S times T -> RR$ with nonnegative entries and rows that sum to $1$ defines a channel $W$ with $W(t given s) = w(s, t)$.
+]
+
+#lemma(
+  "Pair laws on a product",
+  lean: (
+    "Meat.DMC.measureReal_map_fst",
+    "Meat.DMC.measureReal_map_snd",
+    "Meat.DMC.mutualInfo_fst_snd_eq_sum",
+    "Meat.DMC.jointMeasure_real_singleton",
+  ),
+)[
+  Let $nu$ be a finite measure on $S times T$, and write $nu(s, t)$ for the mass of $(s, t)$.
+  The marginals are $nu_1 (s) = sum_t nu(s, t)$ and $nu_2 (t) = sum_s nu(s, t)$, and
+  $ I(X; Y) = sum_s eta(sum_t nu(s, t)) + sum_t eta(sum_s nu(s, t)) - sum_(s, t) eta(nu(s, t)) $
+  for the two coordinate maps $X$ and $Y$.
+  The joint law of a channel $W$ with input law $p$ has the mass $p(s) W(t given s)$ at $(s, t)$.
+][
+  The mass of a fiber is the sum over the fiber.
+  The formula is the definition $I = H(X) + H(Y) - H(X, Y)$, with the joint entropy written as a double sum.
+]
+
+#theorem("Convexity in the channel", lean: "Meat.DMC.inputMutualInfo_le_of_toReal_eq")[
+  Let $c_1, c_2 >= 0$, and let $W, W_1, W_2$ be channels with $W = c_1 W_1 + c_2 W_2$ entrywise.
+  Then $I_W (p) <= c_1 I_(W_1)(p) + c_2 I_(W_2)(p)$.
+][
+  Let $a(s, t) := p(s) W(t given s)$, $q(t) := sum_s a(s, t)$ and $b(s, t) := p(s) q(t)$.
+  By the pair-law formula and the row sums, $I_W (p) = sum_(s, t) a log(a \/ b)$.
+  Each term with $a(s, t) > 0$ has $p(s) > 0$ and $q(t) >= a(s, t) > 0$, and the term with $a(s, t) = 0$ is $0$ on both sides.
+  The maps $W |-> a$ and $W |-> b$ are linear, so $a = c_1 a_1 + c_2 a_2$ and $b = c_1 b_1 + c_2 b_2$.
+  If $b_i (s, t) = 0$, then $a_i (s, t) = 0$, because $a_i (s, t) <= q_i (t)$.
+  Apply the log-sum inequality to $c_1 a_1, c_2 a_2, c_1 b_1, c_2 b_2$ for each $(s, t)$, and use $c a log(c a \/ (c b)) = c a log(a \/ b)$.
+  Sum over $(s, t)$.
+]
+
+#lemma("Every joint law comes from a channel", lean: "Meat.DMC.exists_jointMeasure_eq")[
+  Let $nu$ be a probability measure on $S times T$ with first marginal $p$.
+  Then $nu$ is the joint law of some channel $W$ with input law $p$.
+][
+  Fix $t_0 in T$.
+  Let $W(t given s) := nu(s, t) \/ p(s)$ if $p(s) > 0$, and $W(dot given s) := delta_(t_0)$ otherwise.
+  The rows sum to $1$, because $sum_t nu(s, t) = p(s)$.
+  If $p(s) > 0$, then $p(s) W(t given s) = nu(s, t)$.
+  If $p(s) = 0$, then $nu(s, t) <= p(s) = 0$.
+  Two finite measures on a finite set with the same point masses are equal.
+]
+
+#lemma(
+  "Minimal distortion",
+  lean: ("Meat.RateDistortion.minDist_le_expDist", "Meat.RateDistortion.exists_expDist_eq_minDist"),
+)[
+  Every test channel has $E_W d >= D_min$, and some deterministic test channel has $E_W d = D_min$.
+][
+  For each $s$, $sum_t W(t given s) d(s, t) >= min_t d(s, t)$, because the row of $W$ sums to $1$.
+  For equality, send each $s$ to a point $t$ where $d(s, dot)$ is minimal.
+]
+
+#proposition(
+  "Basic bounds",
+  lean: ("Meat.RateDistortion.rdf_nonneg", "Meat.RateDistortion.rdf_le_inputMutualInfo"),
+)[
+  $R(D) >= 0$, and $R(D) <= I_W (p)$ for every test channel with $E_W d <= D$.
+][
+  Mutual information is nonnegative, so the set is bounded below by $0$.
+]
+
+#theorem("The infimum is attained", lean: "Meat.RateDistortion.exists_rdf_eq")[
+  If $D >= D_min$, then some test channel $W$ has $E_W d <= D$ and $I_W (p) = R(D)$.
+][
+  Identify a channel with its matrix.
+  The set $K$ of stochastic matrices is closed, and it lies in the compact cube $[0, 1]^(S times T)$, so it is compact.
+  The expected distortion is linear in the matrix, so $K_D := {w in K : E_w d <= D}$ is compact.
+  It is nonempty, by the lemma on minimal distortion.
+  By the pair-law formula, $I_W (p)$ is a finite sum of values of the continuous function $eta$ at linear functions of the matrix, so it is continuous.
+  A continuous function attains its minimum on a nonempty compact set.
+  Every test channel with $E_W d <= D$ has its matrix in $K_D$, so this minimum is $R(D)$.
+]
+
+#corollary(
+  "Monotonicity and convexity",
+  lean: ("Meat.RateDistortion.rdf_le_rdf", "Meat.RateDistortion.convexOn_rdf"),
+)[
+  On $[D_min, infinity)$, $R$ is nonincreasing and convex.
+][
+  If $D_min <= D <= D'$, a minimizer for $D$ is feasible for $D'$.
+  For convexity, take $D_1, D_2 >= D_min$, weights $a, b >= 0$ with $a + b = 1$, and minimizers $W_1, W_2$.
+  The channel $W := a W_1 + b W_2$ has $E_W d = a E_(W_1) d + b E_(W_2) d <= a D_1 + b D_2$.
+  By convexity in the channel, $R(a D_1 + b D_2) <= I_W (p) <= a R(D_1) + b R(D_2)$.
+]
+
+#proposition(
+  "The rate region is closed",
+  lean: ("Meat.RateDistortion.rateRegion_eq", "Meat.RateDistortion.isClosed_rateRegion"),
+)[
+  $cal(R)(p, d) = {(R, D) : "some test channel has" E_W d <= D "and" I_W (p) <= R}$, and this set is closed in $RR^2$.
+][
+  The inclusion $subset.eq$ is attainment, and $supset.eq$ is the two previous propositions.
+  The set ${((R, D), w) : E_w d <= D, I_w <= R}$ is closed in $RR^2 times K$.
+  Its projection to $RR^2$ is the region.
+  The projection along the compact space $K$ is a closed map.
+]
+
+== Rate-distortion converse
+#source("Meat.Source.RateDistortionConverse")
+
+This section proves that every achievable pair is in $cal(R)(p, d)$.
+The proof is the standard chain of inequalities, with convexity of $R$ for the last step.
+
+#definition(
+  "Source sequence",
+  lean: (
+    "Meat.RateDistortion.iidMeasure",
+    "Meat.RateDistortion.isProbabilityMeasure_iidMeasure",
+    "Meat.RateDistortion.iidMeasure_real_singleton",
+  ),
+)[
+  The law $mu_n$ on $S^n$ is $mu_n (x) := p^n (x)$.
+  It is a probability measure, and the identity map $X^n$ is an i.i.d. sequence with law $p$.
+]
+
+#lemma(
+  "Entropy of the source sequence",
+  lean: (
+    "Meat.RateDistortion.entropy_iidMeasure",
+    "Meat.RateDistortion.map_eval_iidMeasure",
+    "Meat.RateDistortion.entropy_eval_iidMeasure",
+  ),
+)[
+  Under $mu_n$, $H(X^n) = n H(p)$, each coordinate $X_i$ has the law $p$, and $H(X_i) = H(p)$.
+][
+  The first equality is the entropy of an i.i.d. sequence.
+  The mass of ${x : x_i = s}$ is $p(s)$ by the product formula.
+]
+
+#lemma("Single-letter step", lean: "Meat.RateDistortion.exists_inputMutualInfo_eq")[
+  Let $X$ and $Y$ be random variables with values in $S$ and $T$ on a probability space, where $X$ has the law $p$.
+  Then some test channel $W$ has $I_W (p) = I(X; Y)$, and $E_W d$ is the expectation of $d(X, Y)$.
+][
+  The law of $(X, Y)$ has first marginal $p$.
+  By the lemma on joint laws, it is the joint law of a channel $W$ with input law $p$.
+  Mutual information and expected distortion depend only on this law.
+]
+
+#theorem(
+  "Converse for one code",
+  lean: ("Meat.LossyCode.minDist_le_distortion", "Meat.LossyCode.mul_rdf_le_log"),
+)[
+  Let $(f, g)$ be a lossy code of length $n > 0$ with $k$ indices, and let $D := D(f, g)$.
+  Then $D >= D_min$ and $n R(D) <= log k$.
+][
+  Let $hat(X)^n := g(f(X^n))$ under $mu_n$, and let $D_i$ be the expectation of $d(X_i, hat(X)_i)$.
+  By exchanging sums, $D = (1 \/ n) sum_i D_i$.
+  By the single-letter step, each pair $(X_i, hat(X)_i)$ has a test channel $W_i$ with $E_(W_i) d = D_i$ and $I_(W_i) (p) = I(X_i; hat(X)_i)$.
+  So $D_i >= D_min$, which gives $D >= D_min$, and $R(D_i) <= I(X_i; hat(X)_i)$.
+  The chain is
+  $ log k >= H(f(X^n)) >= H(hat(X)^n) >= I(X^n; hat(X)^n) >= sum_i I(X_i; hat(X)_i) >= sum_i R(D_i) >= n R(D). $
+  The first step is the bound $H <= log |[k]|$, and the second is that $hat(X)^n$ is a function of $f(X^n)$.
+  The third is $I(X^n; hat(X)^n) = H(hat(X)^n) - H(hat(X)^n given X^n)$.
+  For the fourth, $I(X^n; hat(X)^n) = H(X^n) - H(X^n given hat(X)^n)$, with $H(X^n) = sum_i H(X_i)$ for the i.i.d. sequence.
+  By conditional subadditivity, $H(X^n given hat(X)^n) <= sum_i H(X_i given hat(X)^n)$.
+  Conditioning on the function $hat(X)_i$ of $hat(X)^n$ does not decrease entropy, so $H(X_i given hat(X)^n) <= H(X_i given hat(X)_i)$.
+  The last step is Jensen's inequality for the convex function $R$ on $[D_min, infinity)$, with the weights $1 \/ n$.
+]
+
+#theorem("Weak converse", lean: "Meat.RateDistortion.mem_rateRegion_of_achievable")[
+  If $(R, D)$ is achievable, then $(R, D) in cal(R)(p, d)$.
+][
+  Let $epsilon > 0$.
+  Achievability gives a code of a length $n >= 1$ with $k <= e^(n R)$ and $D(f, g) <= D + epsilon$.
+  Since $S$ is nonempty, $k >= 1$, so $log k <= n R$.
+  By the converse for one code, $D_min <= D(f, g) <= D + epsilon$.
+  By monotonicity, $n R(D + epsilon) <= n R(D(f, g)) <= log k <= n R$.
+  So $(R, D + epsilon) in cal(R)(p, d)$ for every $epsilon > 0$.
+  As $epsilon -> 0$, these points tend to $(R, D)$, and the region is closed.
+]
+
+The closedness of the region replaces a separate proof that $R$ is right-continuous.
+In particular, the boundary point $D = D_min$ needs no special case.
+For $D < D_min$, every code has $D(f, g) >= D_min > D + epsilon$ for small $epsilon$, so no pair is achievable.
+
+== Rate-distortion achievability
+#source("Meat.Source.RateDistortionAchievability")
+
+This section proves that every pair with $R > I_W (p)$ and $D = E_W d$ is achievable.
+The proof is random coding from the output marginal, with joint typicality encoding.
+Fix a test channel $W$, let $q$ be the joint law $p(s) W(t given s)$ and let $q_2$ be its output marginal.
+
+#definition(
+  "Distortion-typical set",
+  lean: (
+    "Meat.RateDistortion.distortionTypicalSet",
+    "Meat.RateDistortion.distortionTypicalSet_subset",
+    "Meat.RateDistortion.sum_le_of_mem_distortionTypicalSet",
+    "Meat.RateDistortion.expDist_eq_sum_jointPMF",
+  ),
+)[
+  $J_(d, epsilon)^((n)) (q)$ is the set of pairs $(x, y) in J_epsilon^((n)) (q)$ with
+  $ sum_i d(x_i, y_i) <= n (sum_z q(z) d(z) + epsilon). $
+  The mean $sum_z q(z) d(z)$ is $E_W d$.
+]
+
+Entropy typicality alone does not control the distortion.
+The extra condition is the upper half of the weak law of large numbers for $d$.
+
+#lemma("Distortion-typical sets are likely", lean: "Meat.RateDistortion.tendsto_sum_iidProb_distortionTypicalSet")[
+  For $epsilon > 0$, $q^n (J_(d, epsilon)^((n)) (q)) -> 1$.
+][
+  The jointly typical set has probability tending to $1$.
+  By the weak law of large numbers for $z |-> d(z)$ under $q$, transported to pairs of sequences, so does the distortion condition.
+  The intersection of two sets whose probabilities tend to $1$ also has probability tending to $1$.
+]
+
+#definition(
+  "Covering code",
+  lean: (
+    "Meat.RateDistortion.coveringEncoder",
+    "Meat.RateDistortion.coveringCode",
+    "Meat.RateDistortion.coveringEncoder_mem",
+  ),
+)[
+  Let $C : [k] -> T^n$ be a codebook, $J subset.eq S^n times T^n$ and $m_0 in [k]$.
+  The encoder sends $x$ to an index $m$ with $(x, C(m)) in J$ if one exists, and to $m_0$ otherwise.
+  The decoder is $C$.
+  If some index has $(x, C(m)) in J$, the chosen index also has this property.
+]
+
+#lemma("Bounded distortion", lean: "Meat.RateDistortion.blockDist_le_sum")[
+  If $d >= 0$ and $n > 0$, then $d_n (x, y) <= d_max := sum_(s, t) d(s, t)$.
+][
+  Each value $d(s, t)$ is at most the sum of all values, and $d_n$ is an average of values.
+]
+
+#theorem("Random covering bound", lean: "Meat.RateDistortion.exists_coveringCode_distortion_le")[
+  Let $d >= 0$, $n, k > 0$, $eta > 0$ and $J := J_(d, eta)^((n)) (q)$.
+  Some covering code has
+  $ D(f, g) <= E_W d + eta + d_max ((1 - q^n (J)) + exp(-k e^(-n (I_W (p) + 3 eta)))). $
+][
+  Draw the $k$ codewords independently from $q_2^n$.
+  For a source sequence $x$, the encoder finds a typical codeword unless all $k$ codewords miss.
+  If it finds one, $d_n (x, g(f(x))) <= E_W d + eta$.
+  Otherwise $d_n <= d_max$.
+  So $d_n (x, g(f(x))) <= E_W d + eta + d_max product_m [(x, C(m)) in.not J]$.
+  The weights of the codebooks are products, so the average of the product is $(1 - Q(x))^k$, where $Q(x) = sum_(y : (x, y) in J) q_2^n (y)$.
+  Multiply by $p^n (x)$ and sum over $x$.
+  The first marginal of $q$ is $p$, so the covering lemma bounds $sum_x p^n (x) (1 - Q(x))^k$.
+  Some codebook is at most the average, by the weighted average lemma.
+]
+
+#theorem("Achievability", lean: "Meat.RateDistortion.achievable_of_lt")[
+  Let $d >= 0$.
+  If $R > I_W (p)$, then $(R, E_W d)$ is achievable.
+][
+  Let $epsilon > 0$ and $eta := min(epsilon \/ 2, (R - I_W (p)) \/ 4)$.
+  Then $c := R - I_W (p) - 3 eta > 0$.
+  Let $k := floor(e^(n R))$.
+  Since $R > 0$, $k >= 1$ and $k >= e^(n R) \/ 2$.
+  So $k e^(-n (I_W (p) + 3 eta)) >= e^(n c) \/ 2 >= n c \/ 2$, and $exp(-k e^(-n (I_W (p) + 3 eta))) <= e^(-n c \/ 2) -> 0$.
+  Also $1 - q^n (J) -> 0$.
+  So for large $n$, the last term of the random covering bound is less than $epsilon \/ 2$.
+  The covering code has $k <= e^(n R)$ indices and distortion at most $E_W d + epsilon \/ 2 + epsilon \/ 2$.
+]
+
+== Rate-distortion theorem
+#source("Meat.Source.RateDistortionTheorem")
+
+#lemma("Monotonicity of achievability", lean: "Meat.RateDistortion.Achievable.mono")[
+  If $(R, D)$ is achievable, $R <= R'$ and $D <= D'$, then $(R', D')$ is achievable.
+][
+  The same codes work, because $e^(n R) <= e^(n R')$ and $D + epsilon <= D' + epsilon$.
+]
+
+#corollary(
+  "Achievability in terms of the rate-distortion function",
+  lean: ("Meat.RateDistortion.achievable_of_rdf_lt", "Meat.RateDistortion.not_achievable_of_lt_minDist"),
+)[
+  Let $d >= 0$ for the first statement.
+  If $D >= D_min$ and $R > R(D)$, then $(R, D)$ is achievable.
+  If $D < D_min$, then no pair $(R, D)$ is achievable.
+][
+  Take a minimizing test channel $W$ for $D$.
+  Then $R > I_W (p)$, so $(R, E_W d)$ is achievable, and $E_W d <= D$.
+  The second statement is the condition $D >= D_min$ of the weak converse.
+]
+
+#theorem("Rate-distortion theorem", lean: "Meat.RateDistortion.closure_achievableRegion_eq")[
+  Let $d >= 0$.
+  Then $overline(cal(A)(p, d)) = cal(R)(p, d)$.
+][
+  _Inclusion $subset.eq$._
+  By the weak converse, $cal(A)(p, d) subset.eq cal(R)(p, d)$, and $cal(R)(p, d)$ is closed.
+
+  _Inclusion $supset.eq$._
+  Let $(R, D) in cal(R)(p, d)$ and $delta > 0$.
+  Then $D >= D_min$ and $R + delta > R(D)$, so $(R + delta, D)$ is achievable.
+  As $delta -> 0$ from above, $(R + delta, D) -> (R, D)$.
+]
+
+#corollary("Operational rate-distortion function", lean: "Meat.RateDistortion.sInf_achievable_eq")[
+  Let $d >= 0$ and $D >= D_min$.
+  Then $inf {R : (R, D) "achievable"} = R(D)$.
+][
+  Every achievable $R$ has $R >= R(D)$, by the weak converse.
+  Every $R > R(D)$ is achievable.
+  So the set is nonempty, bounded below by $R(D)$, and contains $R(D) + delta \/ 2$ for every $delta > 0$.
+]
+
+This form needs $D >= D_min$.
+For $D < D_min$, the set of achievable rates is empty, and its real infimum is $0$, not a meaningful value.
+The closure form covers both cases at once.
+Whether the boundary pair $(R(D), D)$ itself is achievable is not decided here, which is why the theorem is stated for the closure.
