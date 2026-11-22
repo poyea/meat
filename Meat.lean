@@ -14,6 +14,7 @@ import Meat.Shannon.Superposition
 import Meat.Shannon.TypicalIntersection
 import Meat.Shannon.Conditional
 import Meat.Shannon.LargeNumbers
+import Meat.Shannon.LogSum
 import Meat.Source.SlepianWolf
 import Meat.Source.SlepianWolfAchievability
 import Meat.Source.SlepianWolfConverse
