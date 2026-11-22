@@ -15,6 +15,7 @@ import Meat.Shannon.TypicalIntersection
 import Meat.Shannon.Conditional
 import Meat.Source.SlepianWolf
 import Meat.Source.SlepianWolfAchievability
+import Meat.Source.SlepianWolfConverse
 import Meat.Channel.Basic
 import Meat.Channel.Achievability
 import Meat.Channel.Converse
