@@ -48,7 +48,18 @@ def table : Std.HashMap Name Tmpl := .ofList [
   (`Real.log, { text := "log #1", prec := 80, args := [100] }),
   (`Real.pi, { text := "pi" }),
   (`Real.negMulLog, { text := "eta(#1)" }),
-  (`MeasureTheory.Measure.map, { text := "#1_* #2", args := [100, 100] }),
+  (`MeasureTheory.Measure.map, { text := "#1_* #2", prec := 90, args := [100, 100] }),
+  (`MeasureTheory.Measure.prod, { text := "#1 times.o #2", prec := 70, args := [71, 71] }),
+  (`MeasureTheory.Measure.AbsolutelyContinuous,
+    { text := "#1 << #2", prec := 50, args := [51, 51] }),
+  (`ProbabilityTheory.uniformOn, { text := "cal(U)(#1)" }),
+  (`PMF.toMeasure, { text := "#1" }),
+  (`PMF.map, { text := "#1_* #2", prec := 90, args := [100, 100] }),
+  (`DFunLike.coe, { text := "#1(#2)", args := [100, 0] }),
+  (`Function.Injective, { text := "#1 \" injective\"", prec := 50, args := [51] }),
+  (`Finset.card, { text := "|#1|" }),
+  (`abs, { text := "|#1|" }),
+  (`Real.binEntropy, { text := "h(#1)" }),
   (`MeasureTheory.Measure.real, { text := "#1(#2)", args := [100, 0] }),
   (`MeasureTheory.Measure.rnDeriv, { text := "(dif #1) / (dif #2) (#3)" }),
   (`MeasureTheory.MeasureSpace.volume, { text := "lambda" }),
@@ -64,10 +75,16 @@ def table : Std.HashMap Name Tmpl := .ofList [
   (`Meat.condEntropyBits, { text := "H_2(#1 given #2)" }),
   (`Meat.mutualInfoBits, { text := "I_2(#1; #2)" }),
   (`Meat.condMutualInfoBits, { text := "I_2(#1; #2 given #3)" }),
+  (`Meat.klDiv, { text := "D(#1 || #2)" }),
+  (`Meat.condKLDiv, { text := "D_(#3)(#1 || #2)" }),
+  (`Meat.MarkovChain, { text := "#1 -> #2 -> #3", prec := 50, args := [51, 51, 51] }),
+  (`Meat.typicalSet, { text := "A_(#3)^((#2))(#1)" }),
+  (`Meat.jointlyTypicalSet, { text := "J_(#3)^((#2))(#1)" }),
   (`Meat.measureDiffEntropy, { text := "h(#1)" }),
   (`Meat.diffEntropy, { text := "h(#*1)" }),
   (`Meat.awgnCapacity, { text := "C(#1, #2)" }),
   (`Meat.DMC.capacity, { text := "C(#1)" }),
+  (`Meat.DMC.inputMutualInfo, { text := "I_(#1)(#2)" }),
   (`Meat.DMC.Achievable, { text := "#2 \" achievable for \" #1", prec := 50, args := [51, 51] }),
   (`Meat.SlepianWolf.achievableRegion, { text := "cal(A)(#1)" }),
   (`Meat.SlepianWolf.rateRegion, { text := "cal(R)(#1)" }),
@@ -80,9 +97,12 @@ def table : Std.HashMap Name Tmpl := .ofList [
 
 def predicates : Std.HashMap Name String := .ofList [
   (`Fintype, "finite"),
+  (`Finite, "finite"),
+  (`Function.Injective, "injective"),
   (``Nonempty, "nonempty"),
   (`Measurable, "measurable"),
   (`MeasureTheory.IsProbabilityMeasure, "a probability measure"),
+  (`MeasureTheory.IsFiniteMeasure, "a finite measure"),
   (`Meat.Network.IsAcyclic, "acyclic")]
 
 def wrap (o : Out) (p : Nat) : String :=
@@ -209,6 +229,14 @@ partial def renderSpecial (supp : List FVarId) (name : Name) (fn : Expr) (args :
   | `Finset.sum, 2 | `Finset.prod, 2 =>
     let op := if name == `Finset.sum then "sum" else "product"
     let s := ex[0]!
+    if s.isAppOf `Finset.filter then
+      let fs ← explicitArgs s.getAppFn s.getAppArgs
+      if fs.size == 2 && fs[1]!.isAppOf `Finset.univ then
+        if let .lam n ty b bi := ex[1]! then
+          return some (← withLocalDecl n bi ty fun x => do
+            let c ← render supp (mkApp fs[0]! x).headBeta
+            let o ← render supp (b.instantiate1 x)
+            return { text := s!"{op}_({← fvarName x} : {c.text}) {wrap o 66}", prec := 60 })
     let dom ← if s.isAppOf `Finset.univ then pure none else some <$> render supp s
     some <$> binder supp ex[1]! fun v o =>
       let sub := match dom with
@@ -242,6 +270,23 @@ partial def renderSpecial (supp : List FVarId) (name : Name) (fn : Expr) (args :
       let a ← render supp p.appArg!
       return some { text := s!"{wrap a 51} in.not {wrap s 51}", prec := 50 }
     return none
+  | `Set.univ, 0 => some <$> render supp args[0]!
+  | `Prod.fst, 0 => return some { text := "pi_1", prec := 99 }
+  | `Prod.snd, 0 => return some { text := "pi_2", prec := 99 }
+  | `Meat.iidProb, 2 =>
+    let p ← render supp ex[0]!
+    let n ← render supp args[1]!
+    let x ← render supp ex[1]!
+    return some { text := s!"{wrap p 100}^({n.text}) ({x.tuple.getD x.text})" }
+  | `Filter.Tendsto, 3 =>
+    unless ex[1]!.isAppOf `Filter.atTop && ex[2]!.isAppOf `nhds do return none
+    let l ← render supp ex[2]!.appArg!
+    some <$> binder supp ex[0]! fun v o =>
+      return { text := s!"lim_({v} -> infinity) {wrap o 60} = {wrap l 51}", prec := 50 }
+  | `Filter.Eventually, 2 =>
+    unless ex[1]!.isAppOf `Filter.atTop do return none
+    some <$> binder supp ex[0]! fun v o =>
+      return { text := s!"{wrap o 11} \" for all large \" {v}", prec := 10 }
   | `Real.exp, 1 =>
     let o ← render supp ex[0]!
     return some { text := if o.text == "1" then "e" else s!"e^({o.text})" }
