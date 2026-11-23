@@ -44,6 +44,7 @@ import Meat.Channel.MultipleAccessK
 import Meat.Channel.MultipleAccessKAchievability
 import Meat.Channel.MultipleAccessKConverse
 import Meat.Channel.MultipleAccessKTheorem
+import Meat.Channel.BroadcastK
 import Meat.Network.Coding
 import Meat.Network.CutSetBound
 import Meat.Network.Linear
