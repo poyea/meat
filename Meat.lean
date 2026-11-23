@@ -57,6 +57,7 @@ import Meat.Channel.MultipleAccessKTheorem
 import Meat.Channel.MultipleAccessKTwo
 import Meat.Channel.BroadcastK
 import Meat.Network.Coding
+import Meat.Network.CutSetBound
 import Meat.Network.Linear
 import Meat.Network.Multicast
 import Meat.Network.RandomLinear
@@ -99,6 +100,7 @@ import Meat.Open.RelayConverse
 import Meat.Open.RelayAchievability
 import Meat.Open.RelayDecodeForward
 import Meat.Open.RelayCapacity
+import Meat.Network.CutSet
 import Meat.Examples.Binary
 import Meat.Examples.Uniform
 import Meat.Examples.Noiseless
