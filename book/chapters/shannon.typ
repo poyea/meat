@@ -1406,3 +1406,100 @@ No independence is needed: the identities hold for every joint law.
   For $H(Y^n)$, take $W$ constant: conditioning on a constant does nothing.
   For mutual information, write $I(Y^n ; W given Z) = H(Y^n given Z) - H(Y^n given W, Z)$ and subtract the two chain rules term by term.
 ]
+
+== Han's inequality and Shearer's lemma
+#source("Meat.Shannon.Combinatorial")
+
+For a random sequence $Y = (Y_1, dots, Y_n)$ and a set $A subset.eq [n]$, the subsequence $Y_A$ is the family $(Y_j)_(j in A)$.
+Shearer's lemma bounds the entropy of $Y$ by the entropies of subsequences that cover each coordinate often enough.
+Han's inequality is the case of the $n$ sets that leave out one coordinate each.
+
+#definition("Subsequence", lean: "Meat.seqRestrict")[
+  For $y : [n] -> S$ and $A subset.eq [n]$, $y_A : A -> S$ is the restriction $j |-> y_j$.
+]
+
+#lemma("Entropy of a subsequence", lean: "Meat.sum_condEntropy_le_entropy_restrict")[
+  For every $A subset.eq [n]$,
+  $ sum_(i in A) H(Y_i given Y^(i - 1)) <= H(Y_A). $
+][
+  Induction on $A$, adding its largest element $a$ last.
+  The map $y_(A union {a}) |-> (y_a, y_A)$ is injective, so $H(Y_(A union {a})) = H(Y_A) + H(Y_a given Y_A)$.
+  Every element of $A$ is smaller than $a$, so $Y_A$ is a function of the prefix $Y^(a - 1)$.
+  Conditioning on a function gives $H(Y_a given Y^(a - 1)) <= H(Y_a given Y_A)$.
+  The empty set has sum $0$ and entropy at least $0$.
+]
+
+#theorem("Shearer's lemma", lean: "Meat.shearer")[
+  Let $(A_t)_(t in I)$ be a finite family of subsets of $[n]$ such that each $i in [n]$ lies in at least $k$ of the sets.
+  Then
+  $ k H(Y) <= sum_(t in I) H(Y_(A_t)). $
+][
+  Write $c_i := H(Y_i given Y^(i - 1)) >= 0$, so $H(Y) = sum_i c_i$ by the chain rule.
+  Then $k H(Y) <= sum_i |{t : i in A_t}| c_i = sum_t sum_(i in A_t) c_i$.
+  By the lemma, each inner sum is at most $H(Y_(A_t))$.
+]
+
+#corollary("Han's inequality", lean: "Meat.han")[
+  $ (n - 1) H(Y) <= sum_(i = 1)^n H(Y_([n] without {i})). $
+][
+  Apply Shearer's lemma to the sets $[n] without {t}$.
+  Each $i$ lies in all of them except the one with $t = i$, so $k = n - 1$.
+  For $n = 0$ both sides are trivial.
+]
+
+== Entropy rate
+#source("Meat.Shannon.EntropyRate")
+
+A process is a sequence $X_0, X_1, dots$ of random variables on one probability space, with values in a finite set $S$.
+Its block of length $n$ is $X^n = (X_0, dots, X_(n - 1))$.
+For a stationary process, the conditional entropy of the next letter decreases, and the entropy per letter converges to the same limit.
+
+#definition(
+  "Blocks, stationarity and Markov processes",
+  lean: ("Meat.block", "Meat.shiftBlock", "Meat.Stationary", "Meat.IsMarkovProcess"),
+)[
+  The block of length $n$ shifted by $k$ is $(X_k, dots, X_(k + n - 1))$, and the block $X^n$ is the shift by $0$.
+  The process is stationary if every shifted block has the same law as the block of the same length.
+  It is a Markov process if $X^n -> X_n -> X_(n + 1)$ is a Markov chain for every $n$.
+]
+
+#definition("Entropy rate", lean: "Meat.entropyRate")[
+  $ H(cal(X)) := inf_n H(X_n given X^n). $
+]
+
+#lemma(
+  "Entropy of blocks",
+  lean: ("Meat.entropy_shiftBlock_succ", "Meat.entropy_block_succ", "Meat.entropy_block_eq_sum"),
+)[
+  $H(X^(n + 1)) = H(X^n) + H(X_n given X^n)$, and the same holds for shifted blocks.
+  So $H(X^n) = sum_(i < n) H(X_i given X^i)$.
+][
+  The map that splits a block into its last letter and the rest is injective.
+  Then add the terms, starting from the empty block, which has entropy $0$.
+]
+
+#theorem("Conditional entropy decreases", lean: ("Meat.condEntropy_succ_le", "Meat.condEntropy_antitone"))[
+  For a stationary process, $H(X_(n + 1) given X^(n + 1)) <= H(X_n given X^n)$.
+][
+  Dropping $X_0$ from the condition can only increase the conditional entropy, so $H(X_(n + 1) given X^(n + 1)) <= H(X_(n + 1) given X_1, dots, X_n)$.
+  By the lemma for the block shifted by $1$, the right side is $H(X_1, dots, X_(n + 1)) - H(X_1, dots, X_n)$.
+  By stationarity, this is $H(X^(n + 1)) - H(X^n) = H(X_n given X^n)$.
+]
+
+#theorem("Entropy rate as a limit", lean: ("Meat.tendsto_condEntropy", "Meat.tendsto_entropy_div"))[
+  For a stationary process,
+  $ H(X_n given X^n) -> H(cal(X)) quad "and" quad H(X^n) / n -> H(cal(X)). $
+][
+  The conditional entropies decrease and are at least $0$, so they converge to their infimum.
+  By the lemma, $H(X^n) \/ n$ is the Cesàro mean of the conditional entropies, so it has the same limit.
+]
+
+#theorem("Entropy rate of a stationary Markov process", lean: "Meat.entropyRate_of_markov")[
+  For a stationary Markov process, $H(cal(X)) = H(X_1 given X_0)$.
+][
+  For $n = m + 1$, the block $X^(m + 1)$ is a relabeling of $(X^m, X_m)$.
+  The Markov property gives $H(X_(m + 1) given X^m, X_m) = H(X_(m + 1) given X_m)$.
+  By stationarity, the pair $(X_m, X_(m + 1))$ has the law of $(X_0, X_1)$, so this is $H(X_1 given X_0)$.
+  So all terms from $n = 1$ on equal $H(X_1 given X_0)$, and the term for $n = 0$ is at least as large.
+  The infimum is $H(X_1 given X_0)$.
+]
