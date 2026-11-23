@@ -2,6 +2,7 @@
 
 #show: book.with(title: "meat", subtitle: "Information theory")
 
+#include "chapters/start.typ"
 #include "chapters/shannon.typ"
 #include "chapters/source.typ"
 #include "chapters/channel.typ"
