@@ -32,6 +32,7 @@ import Meat.Source.RateDistortion
 import Meat.Source.RateDistortionConverse
 import Meat.Source.RateDistortionAchievability
 import Meat.Source.RateDistortionTheorem
+import Meat.Source.WynerZiv
 import Meat.Channel.Basic
 import Meat.Channel.Achievability
 import Meat.Channel.Converse
