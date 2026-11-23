@@ -1332,3 +1332,238 @@ The converse also needs the memoryless structure of the coding measure, and achi
   The two summands for a pair $i < j$ are equal by symmetry of conditional mutual information and a relabeling of the condition.
   Exchange the order of the double sum.
 ]
+
+
+== Strong converse
+#source("Meat.Channel.StrongConverse")
+
+The weak converse says that rates above capacity cannot have a small error probability.
+The strong converse says more: the error probability tends to $1$.
+The proof is Wolfowitz's argument with an output law that mixes the output laws of all types.
+Write $w(b given a) := W(b given a)$ as a real number, and for $x in A^n$ let $k_a$ be the number of times $a$ occurs in $x$.
+
+#definition(
+  "Output laws and types",
+  lean: (
+    "Meat.DMC.outputLaw",
+    "Meat.DMC.typeWeight",
+    "Meat.DMC.typePMF",
+    "Meat.DMC.typePMF_toReal",
+    "Meat.DMC.typeWeight_nonneg",
+    "Meat.DMC.one_le_typeCount",
+  ),
+)[
+  For weights $P$ on $A$, the output law is $(P W)(b) := sum_a P(a) w(b given a)$.
+  The type of $x in A^n$ is $P_x (a) := k_a \/ n$, and for $n > 0$ it is a law on $A$.
+  Every letter of $x$ has $k_(x_t) >= 1$.
+]
+
+#lemma(
+  "Output laws",
+  lean: (
+    "Meat.DMC.sum_outputLaw",
+    "Meat.DMC.outputLaw_nonneg",
+    "Meat.DMC.le_outputLaw",
+    "Meat.DMC.outputLaw_le_one",
+  ),
+)[
+  $sum_b (P W)(b) = sum_a P(a)$.
+  If $P >= 0$, then $0 <= P(a) w(b given a) <= (P W)(b)$, and if moreover $sum_a P(a) = 1$, then $(P W)(b) <= 1$.
+]
+
+#lemma("Information as a divergence sum", lean: "Meat.DMC.inputMutualInfo_eq_sum_log_div")[
+  $ I(p, W) = sum_a sum_b p(a) w(b given a) log (w(b given a)) / ((p W)(b)). $
+][
+  $I = H(Y) - H(Y given X)$, with $H(Y given X) = -sum p(a) w(b given a) log w(b given a)$ and $H(Y) = -sum_b (p W)(b) log (p W)(b)$.
+  Terms with $p(a) w(b given a) = 0$ vanish on both sides.
+]
+
+#lemma(
+  "Analytic facts",
+  lean: ("Meat.DMC.mul_log_sq_le", "Meat.DMC.sum_prod_mul_sq"),
+)[
+  For $0 < p <= 1$, $p (log p)^2 <= 2$.
+  If $w_t$ are laws on $B$ and $sum_b w_t (b) f_t (b) = 0$ for each $t$, then
+  $ sum_(y in B^n) product_t w_t (y_t) (sum_t f_t (y_t))^2 = sum_t sum_b w_t (b) f_t (b)^2. $
+][
+  With $p = e^(-s)$, the bound is $s^2 <= 2 e^s$.
+  For the second claim, expand the square: the cross terms factor and vanish.
+]
+
+#definition(
+  "Mixture of type outputs",
+  lean: (
+    "Meat.DMC.typeCounts",
+    "Meat.DMC.card_typeCounts_le",
+    "Meat.DMC.typeMix",
+    "Meat.DMC.outSeq",
+    "Meat.DMC.sum_typeMix_le",
+    "Meat.DMC.outSeq_le_typeMix",
+  ),
+)[
+  Let $T_n$ be the set of count vectors of sequences in $A^n$, so $|T_n| <= (n + 1)^(|A|)$.
+  The mixture is $Q(y) := |T_n|^(-1) sum_(k in T_n) product_t (P_k W)(y_t)$, and $sum_y Q(y) <= 1$.
+  For $x in A^n$ let $Q_x (y) := product_t (P_x W)(y_t)$.
+  Then $Q_x <= |T_n| Q$.
+]
+
+#lemma("Wolfowitz bound", lean: "Meat.DMC.one_sub_avgError_le")[
+  For every code with message set $M$ and every $lambda >= 0$,
+  $ 1 - overline(lambda) <= 1 / (|M|) sum_m sum_y [W^n (y given f(m)) > lambda Q_(f(m)) (y)] W^n (y given f(m)) + (lambda |T_n|) / (|M|). $
+][
+  The probability of correct decoding is $|M|^(-1) sum_m sum_(y : g(y) = m) W^n (y given f(m))$.
+  If $W^n (y given f(m)) <= lambda Q_(f(m)) (y)$, bound the term by $lambda |T_n| Q(y)$.
+  The decoding sets are disjoint, so these terms sum to at most $lambda |T_n|$.
+]
+
+#lemma(
+  "Mean and variance of the information density",
+  lean: (
+    "Meat.DMC.sum_mean_le_capacity",
+    "Meat.DMC.logBound",
+    "Meat.DMC.abs_log_le_logBound",
+    "Meat.DMC.sum_mul_log_sq_le",
+    "Meat.DMC.sum_log_typeCount_sq_le",
+  ),
+)[
+  Let $Z_t (b) := log w(b given x_t) \/ (P_x W)(b)$ and $L := sum_(a, b) |log w(b given a)|$.
+  Then $sum_t sum_b w(b given x_t) Z_t (b) = n I(P_x, W) <= n C$.
+  Also $sum_b w(b given x_t) Z_t (b)^2 <= (log (n \/ k_(x_t)))^2 + L^2$ and $sum_t (log (n \/ k_(x_t)))^2 <= 2 n |A|$.
+][
+  The mean is a sum over letters, so it is $sum_a k_a$ times the divergence of $w(dot given a)$ from $P_x W$, which is $n I(P_x, W)$.
+  If $Z_t >= 0$, then $Z_t <= log (n \/ k_(x_t))$ because $(P_x W)(b) >= (k_(x_t) \/ n) w(b given x_t)$.
+  If $Z_t < 0$, then $Z_t >= log w(b given x_t) >= -L$ because $(P_x W)(b) <= 1$.
+  The last sum is $n sum_a (k_a \/ n)(log (k_a \/ n))^2 <= 2 n |A|$.
+]
+
+#lemma("The error event", lean: "Meat.DMC.sum_error_event_le")[
+  For $n > 0$, $delta > 0$, $lambda = e^(n (C + delta))$ and every $x in A^n$,
+  $ sum_y [W^n (y given x) > lambda Q_x (y)] W^n (y given x) <= (L^2 + 2 |A|) / (n delta^2). $
+][
+  On the event, all letters have positive probability and $sum_t Z_t (y_t) > n (C + delta)$.
+  Since the means sum to at most $n C$, the centered sum exceeds $n delta$.
+  Chebyshev's inequality with the variance identity and the bounds above gives the claim.
+]
+
+#theorem("Strong converse", lean: "Meat.DMC.strongConverse")[
+  If $R > C(W)$ and $epsilon > 0$, then there is $N$ such that for every $n >= N$ every code of length $n$ with at least $e^(n R)$ messages has $overline(lambda) >= 1 - epsilon$.
+][
+  Let $delta := (R - C) \/ 2$ and $lambda := e^(n (C + delta))$ in the Wolfowitz bound.
+  The first term is at most $(L^2 + 2 |A|) \/ (n delta^2)$.
+  The second is at most $(n + 1)^(|A|) e^(n (C + delta) - n R) <= e^(-n delta \/ 2)$ for large $n$.
+]
+
+== Random coding error exponent
+#source("Meat.Channel.ErrorExponent")
+
+Gallager's bound gives an error probability that decays exponentially in the block length for every rate below capacity.
+
+#definition(
+  "Gallager's function",
+  lean: (
+    "Meat.DMC.gallagerTerm",
+    "Meat.DMC.gallagerSum",
+    "Meat.DMC.gallagerE0",
+    "Meat.DMC.gallagerTerm_nonneg",
+    "Meat.DMC.gallagerSum_nonneg",
+  ),
+)[
+  For $p in Delta(A)$ and $rho > -1$,
+  $ E_0 (rho, p) := -log sum_b (sum_a p(a) w(b given a)^(1 \/ (1 + rho)))^(1 + rho). $
+]
+
+#definition(
+  "Maximum likelihood codes",
+  lean: (
+    "Meat.DMC.mlDecode",
+    "Meat.DMC.le_mlDecode",
+    "Meat.DMC.mlCode",
+    "Meat.DMC.codebookWeight",
+  ),
+)[
+  For a codebook $C : M -> A^n$, the maximum likelihood decoder picks a message $m$ that maximizes $W^n (y given C(m))$.
+  The codebook weight is $product_m p^n (C(m))$.
+]
+
+#lemma(
+  "Gallager's bound for one codebook",
+  lean: ("Meat.DMC.iidProb_mul_blockProb_rpow", "Meat.DMC.errorProb_mlCode_le"),
+)[
+  For $rho >= 0$ and $s := 1 \/ (1 + rho)$,
+  $ lambda_m <= sum_y W^n (y given C(m))^s (sum_(m' != m) W^n (y given C(m'))^s)^rho. $
+  Also $sum_x p^n (x) W^n (y given x)^s = product_t sum_a p(a) w(y_t given a)^s$.
+][
+  If the decoder errs at $y$, some $m' != m$ has $W^n (y given C(m')) >= W^n (y given C(m))$.
+  Then the bracket is at least $W^n (y given C(m))^(s rho)$, and $s + s rho = 1$.
+]
+
+#theorem(
+  "Random coding bound",
+  lean: ("Meat.DMC.sum_codebookWeight_errorProb_mlCode_le", "Meat.DMC.exists_mlCode_avgError_le"),
+)[
+  For $0 <= rho <= 1$, the expected error probability of each message is at most $(|M| - 1)^rho e^(-n E_0 (rho, p))$.
+  Hence some codebook has $overline(lambda) <= (|M| - 1)^rho e^(-n E_0 (rho, p))$.
+][
+  The codeword of $m$ is independent of the others.
+  Reweight the codebooks by $W^n (y given C(m))^s$ and apply Jensen's inequality to the concave map $t |-> t^rho$.
+  The other codewords contribute $(|M| - 1) sum_x p^n (x) W^n (y given x)^s$.
+  Sum over $y$ and factor over letters.
+]
+
+#lemma(
+  "Values and bounds of the function",
+  lean: (
+    "Meat.DMC.gallagerTerm_zero",
+    "Meat.DMC.gallagerSum_zero",
+    "Meat.DMC.outputLaw_le_gallagerTerm",
+    "Meat.DMC.inv_card_le_gallagerSum",
+    "Meat.DMC.gallagerSum_pos",
+    "Meat.DMC.gallagerE0_le",
+  ),
+)[
+  $E_0 (0, p) = 0$.
+  For $0 <= rho <= 1$, the inner sum is at least $(p W)(b)$, the outer sum is at least $1 \/ |B|$, and $E_0 (rho, p) <= log |B|$.
+][
+  $w^s >= w$ for $0 <= w <= 1$ and $s <= 1$.
+  Then $sum_b (p W)(b)^(1 + rho) >= sum_b (p W)(b)^2 >= 1 \/ |B|$ by the Cauchy-Schwarz inequality.
+]
+
+#definition(
+  "Random coding exponent",
+  lean: (
+    "Meat.DMC.exists_code_avgError_le_exp",
+    "Meat.DMC.randomCodingExponent",
+    "Meat.DMC.exists_code_of_lt_randomCodingExponent",
+  ),
+)[
+  $ E_r (R) := sup_(0 <= rho <= 1, p) (E_0 (rho, p) - rho R). $
+  For every $n$, $0 <= rho <= 1$ and $p$ there is a code of length $n$ with at least $e^(n R)$ messages and $overline(lambda) <= e^(-n (E_0 (rho, p) - rho R))$.
+  Hence for every $E < E_r (R)$ and every $n$ there is such a code with $overline(lambda) <= e^(-n E)$.
+]
+
+#lemma(
+  "Slope at zero",
+  lean: ("Meat.DMC.inputMutualInfo_eq_sub", "Meat.DMC.hasDerivAt_gallagerSum"),
+)[
+  The map $f(rho) := sum_b (sum_a p(a) w(b given a)^(1 \/ (1 + rho)))^(1 + rho)$ has derivative $-I(p, W)$ at $rho = 0$.
+  For $0 <= rho <= 1$, $f(rho) = e^(-E_0 (rho, p))$.
+][
+  Each inner term $p(a) w^(1 \/ (1 + rho))$ has derivative $-p(a) w log w$ at $0$, and is constant $0$ near $0$ when $w = 0$.
+  If $(p W)(b) > 0$, the outer term has derivative $(p W)(b) log (p W)(b) - sum_a p(a) w log w$; otherwise it is $0$ near $0$.
+  The sum over $b$ is $-H(Y) + H(Y given X) = -I(p, W)$.
+]
+
+#theorem(
+  "The exponent is positive below capacity",
+  lean: ("Meat.DMC.exists_lt_gallagerE0", "Meat.DMC.randomCodingExponent_pos"),
+)[
+  If $R < I(p, W)$, then $rho R < E_0 (rho, p)$ for some $0 < rho <= 1$.
+  Hence $E_r (R) > 0$ for $R < C(W)$.
+][
+  Let $f$ be as in the slope lemma, so $f(0) = 1$.
+  For small $rho > 0$, $f(rho) < 1 - rho (I + R) \/ 2$ by the slope at zero.
+  Then $E_0 (rho, p) = -log f(rho) >= 1 - f(rho) > rho R$.
+  The set in the supremum is bounded above by $log |B| + |R|$.
+]
+
+The sphere packing bound, the matching upper bound on the exponent for rates near capacity, is not formalized.
