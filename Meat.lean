@@ -89,3 +89,4 @@ import Meat.Open.Broadcast
 import Meat.Open.BroadcastConverse
 import Meat.Open.Relay
 import Meat.Open.RelayConverse
+import Meat.Examples.Binary
