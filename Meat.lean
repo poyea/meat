@@ -17,6 +17,7 @@ import Meat.Shannon.LargeNumbers
 import Meat.Shannon.LogSum
 import Meat.Shannon.Covering
 import Meat.Shannon.Types
+import Meat.Shannon.JointTypes
 import Meat.Shannon.ChainRule
 import Meat.Shannon.Combinatorial
 import Meat.Shannon.EntropyRate
