@@ -5,6 +5,7 @@
 #include "chapters/shannon.typ"
 #include "chapters/source.typ"
 #include "chapters/channel.typ"
+#include "chapters/manyusers.typ"
 #include "chapters/network.typ"
 #include "chapters/continuous.typ"
 #include "chapters/testing.typ"
