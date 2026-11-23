@@ -57,9 +57,9 @@ import Meat.Channel.MultipleAccessKTheorem
 import Meat.Channel.MultipleAccessKTwo
 import Meat.Channel.BroadcastK
 import Meat.Network.Coding
-import Meat.Network.CutSetBound
 import Meat.Network.Linear
 import Meat.Network.Multicast
+import Meat.Network.RandomLinear
 import Meat.Continuous.DifferentialEntropy
 import Meat.Continuous.Divergence
 import Meat.Continuous.Gaussian
