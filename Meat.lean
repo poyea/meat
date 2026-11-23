@@ -66,6 +66,7 @@ import Meat.Open.DistributedLossyConverse
 import Meat.Open.MultipleDescriptions
 import Meat.Open.SecretKey
 import Meat.Open.SecretKeyAchievability
+import Meat.Open.SecretKeyIntrinsic
 import Meat.Open.CourtadeKumar
 import Meat.Open.EntropicFormula
 import Meat.Open.Interactive
