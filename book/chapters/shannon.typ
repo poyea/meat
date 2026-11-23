@@ -1503,3 +1503,64 @@ For a stationary process, the conditional entropy of the next letter decreases, 
   So all terms from $n = 1$ on equal $H(X_1 given X_0)$, and the term for $n = 0$ is at least as large.
   The infimum is $H(X_1 given X_0)$.
 ]
+
+
+== Strong typicality and the Markov lemma
+#source("Meat.Shannon.MarkovLemma")
+
+Weak typicality controls the probability of a whole sequence.
+Strong typicality controls the frequency of every letter, so averages of every function are close to their expectations.
+This is what the Markov lemma and the analysis of distortion need.
+In this section, $A$ and $B$ are finite sets, $N(a given x)$ is the number of positions $i$ with $x_i = a$, and a target $r : A -> RR$ is a vector of letter frequencies.
+The bounds are explicit, so they hold uniformly over all typical input sequences.
+
+#definition("Strongly typical set", lean: ("Meat.strongTypicalSet", "Meat.mem_strongTypicalSet"))[
+  $ T_epsilon^((n)) (r) := {x in A^n : |N(a given x) / n - r(a)| <= epsilon "for all" a in A}. $
+]
+
+#lemma("Typical average", lean: "Meat.abs_avg_sub_le_of_mem_strongTypicalSet")[
+  Let $n >= 1$ and $x in T_epsilon^((n)) (r)$.
+  For every $f : A -> RR$,
+  $ |1 / n sum_(i = 1)^n f(x_i) - sum_a r(a) f(a)| <= epsilon sum_a |f(a)|. $
+][
+  Group the sum by letters: $sum_i f(x_i) = sum_a N(a given x) f(a)$.
+  Each letter contributes at most $epsilon |f(a)|$.
+]
+
+#lemma("Second moment of a sum of independent terms", lean: "Meat.sum_prod_mul_sq_sum")[
+  Let $w_1, dots, w_n$ be probability vectors on $B$, and let $g_i : B -> RR$ have mean $sum_b w_i (b) g_i (b) = 0$ under $w_i$.
+  Under the product law $product_i w_i (y_i)$,
+  $ EE (sum_i g_i (Y_i))^2 = sum_i sum_b w_i (b) g_i (b)^2. $
+][
+  Expand the square.
+  For $i != j$, the expectation of $g_i (Y_i) g_j (Y_j)$ factors into the two means, which are $0$.
+  For $i = j$, the other coordinates sum to $1$.
+]
+
+#theorem("Conditional typicality lemma", lean: "Meat.sum_not_mem_strongTypicalSet_le")[
+  Let $W$ be a channel from $A$ to $B$, let $n >= 1$, $eta > 0$, and $x in T_delta^((n)) (r)$.
+  Let $Y^n$ have the law $product_i W(y_i given x_i)$.
+  Then the probability that $(x, Y^n) in.not T_(delta + eta)^((n)) (r W)$ is at most
+  $ (|A| |B|) / (4 n eta^2), $
+  where $(r W)(a, b) := r(a) W(b given a)$.
+][
+  Fix $(a, b)$.
+  Let $S := N((a, b) given (x, Y^n)) - N(a given x) W(b given a)$.
+  It is a sum of independent terms with mean $0$, one for each position $i$ with $x_i = a$.
+  By the second moment lemma, $EE S^2 = N(a given x) W(b given a) (1 - W(b given a)) <= n / 4$.
+  Write $N((a, b) given (x, Y^n)) / n - r(a) W(b given a) = S / n + (N(a given x) / n - r(a)) W(b given a)$.
+  The last term is at most $delta$ in absolute value, so a deviation larger than $delta + eta$ forces $|S| > n eta$.
+  So the indicator of the bad event is at most $sum_((a, b)) S_(a b)^2 / (n eta)^2$.
+  Take the expectation: the bound is $|A| |B| (n / 4) / (n eta)^2$.
+]
+
+#corollary("Markov lemma", lean: "Meat.markov_lemma")[
+  Let $U -> X -> Y$, where $Y$ is the output of $W$ on input $X$.
+  If $(u^n, x^n) in T_delta^((n)) (r)$ and $Y^n$ has the law $product_i W(y_i given x_i)$, then the probability that $(u^n, x^n, Y^n) in.not T_(delta + eta)^((n)) (r W)$ is at most $|U| |A| |B| \/ (4 n eta^2)$.
+][
+  Apply the conditional typicality lemma to the pair alphabet $U times A$ and the channel $(u, x) |-> W(dot given x)$, which ignores $u$.
+]
+
+This is the form of the Markov lemma that a covering encoder needs.
+Given $X^n = x^n$, the side information $Y^n$ is drawn from $product_i p(y_i given x_i)$ independently of the codeword $u^n$ that the encoder chose from $x^n$.
+The bound does not depend on $u^n$ or $x^n$, so it can be averaged over the encoder's choice.

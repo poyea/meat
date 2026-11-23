@@ -1264,3 +1264,71 @@ This is weak secrecy: the leakage per letter goes to $0$.
 ]
 
 For a degraded channel, $C_"CK" (W) = C_s (W)$, because $V -> X -> Y -> Z$ is a Markov chain.
+
+
+== Channels with state
+#source("Meat.Channel.State")
+
+A channel with state has an input $x in A$, a state $s$ in a finite set $S$ and an output $y in B$, with transition law $W(y given x, s)$.
+The states are i.i.d. with law $p_S$, and the encoder knows the whole state sequence before it sends, so it knows the state noncausally.
+The decoder does not see the state.
+Gelfand and Pinsker (1980) showed that the capacity is the largest value of $I(U ; Y) - I(U ; S)$ over auxiliary variables $U$.
+This section states the model and the capacity formula, and proves the Csiszár sum identity, which is the key step of the converse.
+The coding theorem itself is not yet in Lean.
+
+#definition("Code for a channel with state", lean: ("Meat.StateCode", "Meat.StateCode.avgError"))[
+  A code of length $n$ with message set $M$ is a pair of maps $f : M times S^n -> A^n$ and $g : B^n -> M$.
+  Its average error probability is
+  $ P_e := 1 / |M| sum_m sum_(s in S^n) p_S^n (s) sum_(y : g(y) != m) product_(i = 1)^n W(y_i given f(m, s)_i, s_i). $
+]
+
+#definition(
+  "Achievable rates and capacity",
+  lean: ("Meat.GelfandPinsker.Achievable", "Meat.GelfandPinsker.capacity"),
+)[
+  A rate $R$ is achievable if for every $epsilon > 0$ there exists $N$ such that for every $n >= N$ some code of length $n$ has at least $e^(n R)$ messages and $P_e <= epsilon$.
+  The capacity is the supremum of the achievable rates.
+]
+
+#definition(
+  "Gelfand-Pinsker formula",
+  lean: ("Meat.GelfandPinsker.jointLaw", "Meat.GelfandPinsker.infoCapacity"),
+)[
+  For a law $q$ of $(S, U, X)$ with $U$ in a finite set $[m]$, the joint law adds the output $Y$ drawn from $W(dot given X, S)$.
+  The formula is
+  $ C_"GP" := sup {I(U ; Y) - I(U ; S) : q "has" S "marginal" p_S}. $
+  The sup is over general conditional laws of $(U, X)$ given $S$.
+  Gelfand and Pinsker showed that taking $X$ a function of $(U, S)$ gives the same value.
+]
+
+The Gelfand-Pinsker theorem says that the capacity equals $C_"GP"$.
+In Lean, neither direction is proved yet.
+The converse also needs the memoryless structure of the coding measure, and achievability needs covering inside bins and joint typicality decoding.
+
+#lemma(
+  "Chain rules over a set of coordinates",
+  lean: ("Meat.condMutualInfo_restrict_eq_sum_min", "Meat.condMutualInfo_restrict_eq_sum_max"),
+)[
+  For a random sequence $S^n$, a set $A subset.eq [n]$ and random variables $X$ and $Z$,
+  $ I(X ; S_A given Z) = sum_(j in A) I(X ; S_j given S_(A inter (j, n]), Z) = sum_(j in A) I(X ; S_j given S_(A inter [1, j)), Z). $
+][
+  Induction on $A$.
+  For the first form, add the smallest element $a$ of the new set.
+  The map $s_(A union {a}) |-> (s_A, s_a)$ is injective, so $I(X ; S_(A union {a}) given Z) = I(X ; S_A given Z) + I(X ; S_a given S_A, Z)$ by the chain rule.
+  Every element of $A$ is larger than $a$, so the new term is the term for $a$.
+  The terms for $j in A$ do not change, because $a$ is smaller than $j$.
+  For the second form, add the largest element instead.
+  The empty set gives a constant, whose conditional mutual information is $0$.
+]
+
+#theorem("Csiszár sum identity", lean: "Meat.csiszar_sum")[
+  For random sequences $Y^n$ and $S^n$ and a random variable $V$,
+  $ sum_(i = 1)^n I(S_(i + 1)^n ; Y_i given V, Y^(i - 1)) = sum_(j = 1)^n I(Y^(j - 1) ; S_j given V, S_(j + 1)^n). $
+][
+  Expand the left term for $i$ with the first chain rule, over the coordinates $j > i$ of $S$.
+  This gives $sum_(j > i) I(Y_i ; S_j given S_(j + 1)^n, V, Y^(i - 1))$.
+  Expand the right term for $j$ with the second chain rule, over the coordinates $i < j$ of $Y$.
+  This gives $sum_(i < j) I(S_j ; Y_i given Y^(i - 1), V, S_(j + 1)^n)$.
+  The two summands for a pair $i < j$ are equal by symmetry of conditional mutual information and a relabeling of the condition.
+  Exchange the order of the double sum.
+]
