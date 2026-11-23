@@ -76,6 +76,7 @@ import Meat.Open.CourtadeKumar
 import Meat.Open.EntropicFormula
 import Meat.Open.Interactive
 import Meat.Open.Interference
+import Meat.Open.InterferenceK
 import Meat.Open.TwoWay
 import Meat.Open.MACFeedback
 import Meat.Open.Broadcast
