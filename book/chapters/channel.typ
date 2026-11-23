@@ -1089,3 +1089,178 @@ The two forms are equal, because $U -> X -> Y_1$ is a Markov chain.
 
 If $Y_2$ is a degraded version of $Y_1$, the union of these regions over all $(p_U, p_X)$ is equal to the capacity region.
 For the general broadcast channel, the capacity region is an open problem.
+
+== Feedback
+#source("Meat.Channel.Feedback")
+
+With feedback, the encoder sees the past outputs of the channel before it chooses the next input.
+This section proves that feedback does not increase the capacity of a DMC.
+The converse uses the interactive code measure of the chapter on open problems.
+
+#definition(
+  "Feedback code",
+  lean: (
+    "Meat.FeedbackCode",
+    "Meat.FeedbackCode.errorProb",
+    "Meat.FeedbackCode.avgError",
+    "Meat.FeedbackCode.ofBlockCode",
+    "Meat.FeedbackCode.errorProb_ofBlockCode",
+    "Meat.FeedbackCode.avgError_ofBlockCode",
+  ),
+)[
+  A feedback code of length $n$ is a pair $(f, g)$ of encoders $f_i : M times B^(i - 1) -> A$ for $i in [n]$ and a decoder $g : B^n -> M$.
+  The law of the outputs for the message $m$ is
+  $ P(y^n given m) = product_(i = 1)^n W(y_i given f_i (m, y^(i - 1))). $
+  The error probability $lambda_m$ is the probability that $g(y^n) != m$, and $overline(lambda)$ is the average over $m$.
+  A block code is a feedback code that ignores the past outputs, with the same error probabilities.
+]
+
+#definition("Achievable rate with feedback", lean: ("Meat.DMC.FeedbackAchievable", "Meat.DMC.Achievable.feedback"))[
+  A rate $R$ is achievable with feedback if it is achievable as in the point-to-point section, with feedback codes in place of block codes.
+  Every achievable rate is achievable with feedback.
+]
+
+#lemma(
+  "Converse for one feedback code",
+  lean: ("Meat.FeedbackCode.measureReal_dec_ne", "Meat.FeedbackCode.one_sub_mul_log_card_le"),
+)[
+  For a feedback code with nonempty message set,
+  $ (1 - overline(lambda)) log |M| <= n C(W) + log 2. $
+][
+  The average error is the measure of the error event under the interactive code measure.
+  By the sum-rate converse for interactive codes, $(1 - overline(lambda)) log |M| <= sum_i I_(p_i)(X; Y) + log 2$, where $p_i$ is the law of the input at time $i$.
+  The key step is $H(Y_i given M, Y^(i - 1)) = H(Y_i given X_i)$: given the message and the past, the law of $Y_i$ is $W(dot given X_i)$.
+  Each term is $I_W (p_i) <= C(W)$.
+]
+
+#theorem(
+  "Feedback does not increase capacity, Shannon",
+  lean: ("Meat.DMC.le_capacity_of_feedbackAchievable", "Meat.DMC.closure_feedbackAchievable_eq"),
+)[
+  Every rate achievable with feedback is at most $C(W)$.
+  If $A$ is nonempty, the closure of the set of rates $R >= 0$ achievable with feedback is $[0, C(W)]$.
+][
+  The first claim follows from the converse for one feedback code, as in the weak converse without feedback.
+  For the second claim, the set is contained in $[0, C(W)]$, which is closed.
+  It contains the set of rates achievable without feedback, whose closure is $[0, C(W)]$ by the channel coding theorem.
+]
+
+Feedback can still help in other ways.
+It can make coding simpler, it can improve the error exponent, and it can enlarge the capacity region of a multiple access channel.
+
+== Wiretap channels
+#source("Meat.Channel.Wiretap")
+
+A sender sends a message to a legitimate receiver over a DMC $W$ from $A$ to $B times E$.
+The legitimate receiver sees $Y in B$, and an eavesdropper sees $Z in E$.
+The message must stay secret from the eavesdropper.
+The encoder may use private randomness.
+
+#definition(
+  "Wiretap code",
+  lean: (
+    "Meat.WiretapCode",
+    "Meat.WiretapCode.errorProb",
+    "Meat.WiretapCode.avgError",
+    "Meat.WiretapCode.toFn",
+    "Meat.WiretapCode.leakage",
+  ),
+)[
+  A wiretap code of length $n$ is a pair $(f, g)$ of an encoder $f : M times L -> A^n$ and a decoder $g : B^n -> M$.
+  The set $L$ holds the private randomness of the encoder.
+  For $(m, l)$, the error probability is the probability under $W^n (dot given f(m, l))$ that $g(y^n) != m$, and $overline(lambda)$ is its average over $M times L$.
+  Let $(U, V)$ be uniform on $M times L$, and let the outputs have law $W^n (dot given f(U, V))$.
+  The leakage of the code is $I(U; Z^n)$.
+]
+
+#definition("Achievable secrecy rate", lean: "Meat.Wiretap.Achievable")[
+  A rate $R$ is achievable if for every $epsilon > 0$ there exists $N$ such that for every $n >= N$ there are $k >= e^(n R)$, $l >= 1$ and a wiretap code of length $n$ with $M = [k]$ and $L = [l]$, $overline(lambda) <= epsilon$ and leakage at most $n epsilon$.
+]
+
+This is weak secrecy: the leakage per letter goes to $0$.
+
+#definition(
+  "Secrecy capacities",
+  lean: (
+    "Meat.Wiretap.degraded",
+    "Meat.Wiretap.secrecyRate",
+    "Meat.Wiretap.secrecyCapacity",
+    "Meat.Wiretap.ckMeasure",
+    "Meat.Wiretap.ckCapacity",
+  ),
+)[
+  The channel is physically degraded if $W(y, z given x) = W_1 (y given x) D(z given y)$ for DMCs $W_1$ from $A$ to $B$ and $D$ from $B$ to $E$.
+  For $p in Delta(A)$, let $(X, Y, Z)$ have the law $p(x) W(y, z given x)$.
+  The secrecy rate of $p$ is $I(X; Y) - I(X; Z)$, and Wyner's secrecy capacity is $C_s (W) := sup_p (I(X; Y) - I(X; Z))$.
+  The Csiszár-Körner capacity is the supremum of $I(V; Y) - I(V; Z)$ over all $k in NN$ and laws $q(v, x)$ on $[k] times A$, where $(V, X, Y, Z)$ has the law $q(v, x) W(y, z given x)$.
+]
+
+#theorem("Secrecy capacity, Csiszár and Körner")[
+  For every wiretap channel, the closure of the set of achievable rates $R >= 0$ is $[0, C_"CK"(W)]$.
+][
+  Achievability uses a random codebook with $e^(n (I(V; Y) - I(V; Z)))$ bins, each with $e^(n I(V; Z))$ codewords drawn from $p_V$, and a channel prefix $p(x given v)$.
+  The private randomness picks the codeword in the bin, and this confuses the eavesdropper.
+  The converse uses the Csiszár sum identity, with $V_i := (M, Y^(i - 1), Z_(i + 1)^n)$.
+  This theorem is not in Lean.
+]
+
+#lemma(
+  "Converse for one wiretap code",
+  lean: ("Meat.WiretapCode.measureReal_dec_ne", "Meat.WiretapCode.entropy_message", "Meat.WiretapCode.one_sub_mul_log_card_le"),
+)[
+  Let $p_i$ be the law of the input at time $i$ under the code.
+  Then
+  $ (1 - overline(lambda)) log |M| <= I(U; Z^n) + sum_(i = 1)^n I_(p_i)(X; Y given Z) + log 2. $
+][
+  The average error is the measure of the error event, and $H(U) = log |M|$.
+  By Fano's inequality, $log |M| <= I(U; Y^n) + log 2 + overline(lambda) log |M|$.
+  Next, $I(U; Y^n) <= I(U; Y^n, Z^n) = I(U; Z^n) + I(U; Y^n given Z^n)$.
+  Write $T := (U, V)$.
+  Then $I(U; Y^n given Z^n) = H(Y^n given Z^n) - H(Y^n given U, Z^n) <= H(Y^n given Z^n) - H(Y^n given T, Z^n)$.
+  By subadditivity, $H(Y^n given Z^n) <= sum_i H(Y_i given Z_i)$.
+  By the chain rule, $H(Y^n given T, Z^n) = H(Y^n, Z^n given T) - H(Z^n given T)$.
+  The first term is $sum_i H(Y_i, Z_i given X_i)$, because the code measure is memoryless given $T$.
+  The second term is at most $sum_i H(Z_i given X_i)$, because $X_i$ is a function of $T$.
+  So $I(U; Y^n given Z^n) <= sum_i (H(Y_i given Z_i) - H(Y_i given X_i, Z_i)) = sum_i I(X_i; Y_i given Z_i)$.
+]
+
+#lemma(
+  "Degraded channels",
+  lean: (
+    "Meat.Wiretap.jointPMF_degraded_map",
+    "Meat.Wiretap.condEntropy_degraded",
+    "Meat.Wiretap.condMutualInfo_degraded",
+    "Meat.Wiretap.secrecyRate_le_log_card",
+    "Meat.Wiretap.secrecyRate_le_secrecyCapacity",
+  ),
+)[
+  For a physically degraded channel, $X -> Y -> Z$ is a Markov chain, and
+  $ I(X; Y given Z) = I(X; Y) - I(X; Z). $
+  The secrecy rate is at most $log |B|$, so it is at most $C_s (W)$.
+][
+  The law of $(X, Y)$ is $p(x) W_1 (y given x)$, and given $(X, Y)$ the law of $Z$ is $D(dot given Y)$.
+  By the kernel lemma, $H(Z given X, Y) = H(Z given Y)$, so $I(X; Z given Y) = 0$.
+  Then $I(X; Y) = I(X; Y, Z) = I(X; Z) + I(X; Y given Z)$ by the chain rule.
+  The bound holds because $I(X; Y) <= H(Y) <= log |B|$ and $I(X; Z) >= 0$.
+]
+
+#theorem("Converse for the degraded wiretap channel, Wyner", lean: "Meat.Wiretap.le_secrecyCapacity_of_achievable")[
+  For a physically degraded channel, every achievable rate is at most $C_s (W)$.
+][
+  The secrecy capacity is nonnegative, because the secrecy rate of a degraded channel is a conditional mutual information.
+  Suppose $R > C_s$ and let $delta := R - C_s$ and $epsilon := delta \/ (2 (R + 1))$.
+  Take a code with $k >= e^(n R)$, $overline(lambda) <= epsilon$ and leakage at most $n epsilon$.
+  By the converse for one code and the lemma on degraded channels, $(1 - epsilon) log k <= n epsilon + n C_s + log 2$.
+  Since $(1 - epsilon) R - epsilon = C_s + delta \/ 2$, this gives $n delta \/ 2 <= log 2$, which fails for large $n$.
+]
+
+#theorem("Achievability for the degraded wiretap channel, Wyner")[
+  For a physically degraded channel, every $R < C_s (W)$ is achievable, so the closure of the achievable rates is $[0, C_s (W)]$.
+][
+  Wiretap coding: random binning with $e^(n R)$ bins of $e^(n I(X; Z))$ codewords each.
+  The legitimate receiver decodes the codeword by joint typicality.
+  The eavesdropper can almost decode the codeword within the bin, so the leakage is small.
+  This proof is not in Lean.
+]
+
+For a degraded channel, $C_"CK" (W) = C_s (W)$, because $V -> X -> Y -> Z$ is a Markov chain.
