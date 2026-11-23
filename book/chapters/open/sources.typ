@@ -407,8 +407,7 @@ For two parties the question is open.
   The upper bound on achievable rates bounds the supremum.
 ]
 
-The bound $C_"SK" (p) <= I(X ; Y arrow.b Z)$ is not yet in Lean.
-The next section proves the one-way lower bound $C_"SK" (p) >= I(X ; Y) - I(X ; Z)$.
+The next two sections prove the one-way lower bound $C_"SK" (p) >= I(X ; Y) - I(X ; Z)$ and the intrinsic information bound $C_"SK" (p) <= I(X ; Y arrow.b Z)$.
 
 == The one-way lower bound
 #source("Meat.Open.SecretKeyAchievability")
@@ -472,6 +471,47 @@ For a law $q$ of a pair, let $J$ be its jointly typical set and $q^n (J)$ the pr
   Otherwise some rate $R$ lies strictly between $C_"SK" (p)$ and $I(X ; Y) - I(X ; Z)$.
   It is achievable by the theorem, and the set of achievable rates is bounded above by $I(X ; Y given Z)$, so $R <= C_"SK" (p)$.
   This is a contradiction.
+]
+
+== The intrinsic information bound
+#source("Meat.Open.SecretKeyIntrinsic")
+
+This section proves $C_"SK" (p) <= I(X ; Y arrow.b Z)$, the bound of Maurer and Wolf (1999).
+Eve can only lose by processing her observations, so a key that is secret from Eve is also secret from a degraded Eve.
+For a channel $W$ from $E$ to $[m]$, let $p_W$ be the law of $(X, Y, overline(Z))$, where $overline(Z)$ is the output of $W$ on input $Z$.
+
+The proof couples the two sources.
+Let $q$ be the law of $((X, Y, Z), overline(Z))$ with mass $q(a, overline(z)) = p(a) W(overline(z) given a_3)$.
+Its marginal on $(X, Y, Z)$ is $p$, and its marginal on $(X, Y, overline(Z))$ is $p_W$.
+The coordinatewise image of the i.i.d. law $q^n$ under a map $g$ is the i.i.d. law of the image law, by the marginal formula for `iidProb`.
+So $q^n$ carries both $p^n$ and $p_W^n$.
+Under $q$, the chain $(X, Y) -> Z -> overline(Z)$ holds: the masses factor as in the Markov criterion of the Shannon chapter.
+Each entropy of a coordinatewise image of $q^n$ is $n$ times the single-letter entropy, so $I(X^n, Y^n ; overline(Z)^n given Z^n) = n I(X, Y ; overline(Z) given Z) = 0$.
+
+#theorem("Processing at Eve keeps a rate achievable", lean: "Meat.SecretKey.achievable_eveChannel")[
+  If $R$ is achievable for $p$, then $R$ is achievable for $p_W$, for every channel $W$.
+][
+  Use the same protocols.
+  The keys and the transcript are functions of $(X^n, Y^n)$, whose law is the same under $p^n$ and $p_W^n$.
+  So the error probability and $log k - H(K_A)$ do not change.
+  For secrecy, work under $q^n$ with $K := K_A$, $F$ the transcript, and $V := (X^n, Y^n)$.
+  By the chain rule,
+  $ I(K ; overline(Z)^n, F) <= I(K ; Z^n, overline(Z)^n, F) = I(K ; Z^n, F) + I(K ; overline(Z)^n given Z^n, F). $
+  The pair $(F, K)$ is a function of $V$, so
+  $ I(K ; overline(Z)^n given F, Z^n) <= I(F, K ; overline(Z)^n given Z^n) <= I(V ; overline(Z)^n given Z^n) = 0. $
+  So $I(K ; overline(Z)^n, F) <= I(K ; Z^n, F) <= n epsilon$.
+]
+
+#theorem(
+  "Intrinsic information bound",
+  lean: ("Meat.SecretKey.capacity_le_eveChannel", "Meat.SecretKey.capacity_le_intrinsicInfo"),
+)[
+  For every channel $W$, $C_"SK" (p) <= I(X ; Y given overline(Z))$ under $p_W$.
+  Hence $C_"SK" (p) <= I(X ; Y arrow.b Z)$.
+][
+  The achievable rates for $p$ are achievable for $p_W$, and the rate $0$ is achievable.
+  So $C_"SK" (p) <= C_"SK" (p_W) <= I(X ; Y given overline(Z))$ by the upper bound for $p_W$.
+  The intrinsic information is the infimum of these values over all $m$ and $W$, and the set of values is nonempty.
 ]
 
 == The Courtade-Kumar conjecture
