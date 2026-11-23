@@ -38,6 +38,7 @@ import Meat.Channel.Achievability
 import Meat.Channel.Converse
 import Meat.Channel.CodingTheorem
 import Meat.Channel.Feedback
+import Meat.Channel.Wiretap
 import Meat.Channel.MultipleAccess
 import Meat.Channel.MultipleAccessAchievability
 import Meat.Channel.MultipleAccessConverse
