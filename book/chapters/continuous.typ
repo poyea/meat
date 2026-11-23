@@ -822,3 +822,138 @@ The same quantizer $q$ gives the input law and reads the channel output.
 ][
   Apply the coding theorem from a quantization bound, with the quantization bound above.
 ]
+
+
+== Water filling
+#source("Meat.Continuous.WaterFilling")
+
+There are finitely many Gaussian channels in parallel, with noise variances $N_i > 0$ and a total power budget $P >= 0$.
+With powers $p_i$, the sum of the capacities is $sum_i C(p_i, N_i)$, where $C(p, N) = 1/2 log(1 + p \/ N)$.
+This section solves the optimization over the powers.
+The operational capacity of parallel Gaussian channels is not formalized.
+
+#definition(
+  "Rates, allocations and water levels",
+  lean: (
+    "Meat.WaterFilling.rate",
+    "Meat.WaterFilling.fill",
+    "Meat.WaterFilling.Feasible",
+    "Meat.WaterFilling.capacity",
+  ),
+)[
+  The rate of an allocation $p$ is $r(p) := sum_i C(p_i, N_i)$.
+  An allocation is feasible for $P$ if $p_i >= 0$ for all $i$ and $sum_i p_i <= P$.
+  The water-filling allocation at level $nu$ is $p_i^nu := max(nu - N_i, 0)$.
+  The capacity is $sup {r(p) : p "feasible for" P}$.
+]
+
+#lemma(
+  "The water-filling allocation",
+  lean: (
+    "Meat.WaterFilling.fill_nonneg",
+    "Meat.WaterFilling.fill_pos_iff",
+    "Meat.WaterFilling.add_fill_of_pos",
+    "Meat.WaterFilling.fill_eq_zero_iff",
+    "Meat.WaterFilling.continuous_sum_fill",
+    "Meat.WaterFilling.fill_feasible",
+  ),
+)[
+  $p_i^nu >= 0$, and $p_i^nu > 0$ if and only if $N_i < nu$, in which case $N_i + p_i^nu = nu$.
+  $p_i^nu = 0$ if and only if $nu <= N_i$.
+  The total $sum_i p_i^nu$ is continuous in $nu$, and if it equals $P$, then $p^nu$ is feasible.
+]
+
+#lemma("Existence of the water level", lean: "Meat.WaterFilling.exists_level")[
+  If there is at least one channel and $P >= 0$, there is $nu >= min_i N_i$ with $sum_i p_i^nu = P$.
+][
+  The total is $0$ at $nu = min_i N_i$ and at least $P$ at $nu = min_i N_i + P$.
+  Apply the intermediate value theorem.
+]
+
+#theorem(
+  "Optimality and uniqueness",
+  lean: ("Meat.WaterFilling.rate_le_rate_fill", "Meat.WaterFilling.capacity_eq", "Meat.WaterFilling.rate_fill_eq"),
+)[
+  Let $nu > 0$ with $sum_i p_i^nu = P$.
+  Every feasible $p$ has $r(p) <= r(p^nu)$, with strict inequality if $p != p^nu$.
+  Hence the capacity is $r(p^nu) = sum_i 1/2 log(max(nu, N_i) \/ N_i)$.
+][
+  By concavity of the logarithm, $log(N_i + p_i) - log(N_i + p_i^nu) <= (p_i - p_i^nu) \/ (N_i + p_i^nu)$, strictly if $p_i != p_i^nu$.
+  If $p_i^nu > 0$, the denominator is $nu$.
+  If $p_i^nu = 0$, the right side is $p_i \/ N_i <= p_i \/ nu$.
+  Summing, the right sides add to at most $(sum_i p_i - P) \/ nu <= 0$.
+]
+
+#theorem("Water filling", lean: "Meat.WaterFilling.exists_waterFilling")[
+  If there is at least one channel, $N_i > 0$ for all $i$ and $P >= 0$, then there is a water level $nu > 0$ such that:
+  - $p^nu$ is feasible and uses the whole budget;
+  - $N_i + p_i^nu = nu$ whenever $p_i^nu > 0$, and $nu <= N_i$ whenever $p_i^nu = 0$;
+  - the capacity is $sum_i 1/2 log(max(nu, N_i) \/ N_i)$;
+  - $p^nu$ is the only feasible allocation that reaches the capacity.
+][
+  Combine the existence of the level with optimality and uniqueness.
+  The level is positive because it is at least $min_i N_i$.
+]
+
+The second item is the Karush-Kuhn-Tucker condition: the channels that get power are filled up to the common level $nu$.
+
+== Gaussian multiple access and broadcast channels
+#source("Meat.Continuous.GaussianMultiUser")
+
+This section has the regions of the Gaussian multiple access channel $Y = X_1 + X_2 + Z$ and of the degraded Gaussian broadcast channel $Y_j = X + Z_j$, the algebra of their corner points, and the maximum entropy bounds behind their converses.
+The operational capacity theorems for these channels are not formalized.
+
+#lemma(
+  "Capacity algebra",
+  lean: (
+    "Meat.GaussianMultiUser.awgnCapacity_add",
+    "Meat.GaussianMultiUser.awgnCapacity_mono",
+    "Meat.GaussianMultiUser.awgnCapacity_nonneg'",
+  ),
+)[
+  For $P_1, P_2 >= 0$ and $N > 0$, $C(P_1, N) + C(P_2, P_1 + N) = C(P_1 + P_2, N)$.
+  $C(P, N)$ is nonnegative and monotone in $P$.
+][
+  $(1 + P_1 \/ N)(1 + P_2 \/ (P_1 + N)) = 1 + (P_1 + P_2) \/ N$.
+]
+
+#definition("Gaussian multiple access region", lean: "Meat.GaussianMultiUser.macRegion")[
+  The region for powers $P_1, P_2$ and noise $N$ is the set of $(R_1, R_2) >= 0$ with
+  $ R_1 <= C(P_1, N), quad R_2 <= C(P_2, N), quad R_1 + R_2 <= C(P_1 + P_2, N). $
+]
+
+#proposition("Successive decoding corner", lean: "Meat.GaussianMultiUser.corner_mem_macRegion")[
+  The point $(C(P_1, N), C(P_2, P_1 + N))$ is in the region and has the largest sum rate $C(P_1 + P_2, N)$.
+][
+  Receiver decodes user $2$ first, treating user $1$ as noise of power $P_1$, then subtracts it.
+  The algebra gives the sum, and $C(P_2, P_1 + N) <= C(P_2, N)$.
+]
+
+#definition("Degraded Gaussian broadcast region", lean: "Meat.GaussianMultiUser.bcRegion")[
+  For power $P$ and noises $N_1 <= N_2$, the region is the union over $alpha in [0, 1]$ of the sets of $(R_1, R_2) >= 0$ with
+  $ R_1 <= C(alpha P, N_1), quad R_2 <= C((1 - alpha) P, alpha P + N_2). $
+]
+
+#proposition("Equal noises", lean: "Meat.GaussianMultiUser.bcRegion_sum_of_eq")[
+  If $N_1 = N_2 = N$, the boundary point for $alpha$ is in the region and has sum rate $C(P, N)$, the single-user capacity.
+][
+  The capacity algebra with $P_1 = alpha P$ and $P_2 = (1 - alpha) P$.
+]
+
+#theorem(
+  "Maximum entropy bounds",
+  lean: (
+    "Meat.GaussianMultiUser.diffEntropy_le_of_variance_le",
+    "Meat.GaussianMultiUser.diffEntropy_mac_le",
+    "Meat.GaussianMultiUser.diffEntropy_bc_le",
+    "Meat.GaussianMultiUser.sub_gaussian_le_awgnCapacity",
+  ),
+)[
+  If $Y$ has a density, finite second moment and $"Var"(Y) <= v$, then $h(Y) <= 1/2 log(2 pi e v)$.
+  If $X_1, X_2$ are independent, $X_1 + X_2$ is independent of $Z$, $"Var"(X_j) <= P_j$ and $"Var"(Z) = N$, then $h(X_1 + X_2 + Z) <= 1/2 log(2 pi e (P_1 + P_2 + N))$.
+  If $X$ is independent of $Z$, $"Var"(X) <= P$ and $"Var"(Z) = N$, then $h(X + Z) <= 1/2 log(2 pi e (P + N))$.
+  In each case, subtracting the entropy $1/2 log(2 pi e N)$ of the Gaussian noise leaves at most $C(P_1 + P_2, N)$, respectively $C(P, N)$.
+][
+  The Gaussian maximizes differential entropy for a given variance, and the variances of independent variables add.
+  These are the steps that bound $I((X_1, X_2); Y)$ in the converse for the multiple access channel and $I(X; Y_2)$ in the converse for the broadcast channel.
+]

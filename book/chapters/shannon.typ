@@ -1564,3 +1564,90 @@ The bounds are explicit, so they hold uniformly over all typical input sequences
 This is the form of the Markov lemma that a covering encoder needs.
 Given $X^n = x^n$, the side information $Y^n$ is drawn from $product_i p(y_i given x_i)$ independently of the codeword $u^n$ that the encoder chose from $x^n$.
 The bound does not depend on $u^n$ or $x^n$, so it can be averaged over the encoder's choice.
+
+
+== Joint and conditional types
+#source("Meat.Shannon.JointTypes")
+
+The method of types of the earlier section counts sequences with a given letter frequency.
+This section counts sequences $x^n$ whose joint frequencies with a fixed sequence $y^n$ are given.
+These counts are the base of the covering and packing bounds for strong typicality.
+In this section, $A$ and $B$ are finite sets, $N(a given x)$ is the number of positions with $x_i = a$, and $N((b, a) given (y, x))$ counts the positions with $y_i = b$ and $x_i = a$.
+Bounds are stated with counts, not with measures, so that letters of probability $0$ need no special case.
+
+#definition("Entropy of a count vector", lean: "Meat.countEntropy")[
+  For $k : A -> NN$ with total $m := sum_a k(a)$,
+  $ H_"cnt" (k) := sum_a k(a) log(m / k(a)). $
+  This is $m$ times the entropy of the frequency vector $k \/ m$.
+]
+
+#lemma("Counts and the entropy of a type", lean: "Meat.mul_measureEntropy_seqType")[
+  For $z in A^m$, $m H(P_z) = H_"cnt" (N(dot given z))$, where $P_z$ is the type of $z$.
+][
+  Termwise, $m eta(c \/ m) = c log(m \/ c)$, also when $c = 0$ or $m = 0$.
+]
+
+#lemma(
+  "Size of a type class in counts",
+  lean: ("Meat.card_typeCount_le_exp", "Meat.exp_div_le_card_typeCount"),
+)[
+  For $k : A -> NN$ with total $m$,
+  $ e^(H_"cnt" (k)) / (m + 1)^(|A|) <= |{z in A^m : N(dot given z) = k}| <= e^(H_"cnt" (k)). $
+][
+  Some $z$ has counts $k$, and the set is the type class of its type.
+  Apply the bounds of the method of types and the previous lemma.
+]
+
+#definition("Conditional type class", lean: ("Meat.condTypeClass", "Meat.mem_condTypeClass"))[
+  For $y in B^n$ and $k : B -> A -> NN$,
+  $ T(k given y) := {x in A^n : N((b, a) given (y, x)) = k(b, a) "for all" b, a}. $
+]
+
+#theorem("Product formula", lean: "Meat.card_condTypeClass")[
+  $ |T(k given y)| = product_(b in B) |{z in A^(N(b given y)) : N(dot given z) = k(b, dot)}|. $
+][
+  Split the positions by the value of $y$.
+  The fibers $\{i : y_i = b\}$ have $N(b given y)$ elements, and an ordering of each fiber gives a bijection from $A^n$ onto $product_b A^(N(b given y))$.
+  Under it, the joint count $N((b, a) given (y, x))$ is the count of $a$ in the block for $b$.
+  So $T(k given y)$ is mapped onto the product of the type classes of the blocks.
+]
+
+#corollary(
+  "Size of a conditional type class",
+  lean: ("Meat.card_condTypeClass_le", "Meat.exp_div_le_card_condTypeClass"),
+)[
+  If $sum_a k(b, a) = N(b given y)$ for every $b$, then
+  $ e^(sum_b H_"cnt" (k(b, dot))) / (n + 1)^(|A| |B|) <= |T(k given y)| <= e^(sum_b H_"cnt" (k(b, dot))). $
+  The exponent is $n (H(P_(Y X)) - H(P_Y))$ for the joint type $P_(Y X)$, which is $n$ times a conditional entropy.
+][
+  Multiply the bounds for the blocks.
+  Each block has length at most $n$, so the product of the polynomial factors is at most $(n + 1)^(|A| |B|)$.
+]
+
+#lemma("Marginal counts", lean: "Meat.typeCount_eq_sum_pair")[
+  $N(a given x) = sum_b N((b, a) given (y, x))$.
+][
+  Split the positions with $x_i = a$ by the value of $y_i$.
+]
+
+#theorem(
+  "Probability of a conditional type class",
+  lean: (
+    "Meat.sum_iidProb_condTypeClass",
+    "Meat.sum_iidProb_condTypeClass_le",
+    "Meat.le_sum_iidProb_condTypeClass",
+  ),
+)[
+  Let $q$ be a law on $A$, and let $X^n$ have the law $q^n$.
+  Then
+  $ P(X^n in T(k given y)) = |T(k given y)| product_a q(a)^(sum_b k(b, a)). $
+  If $sum_a k(b, a) = N(b given y)$ for every $b$, this is at most $e^(sum_b H_"cnt" (k(b, dot))) product_a q(a)^(sum_b k(b, a))$ and at least the same quantity divided by $(n + 1)^(|A| |B|)$.
+][
+  Every sequence in the class has the letter counts $sum_b k(b, a)$, so it has probability $product_a q(a)^(sum_b k(b, a))$.
+  Then apply the size bounds.
+]
+
+These are the two exact bounds behind the strong covering lemma and the packing lemma.
+The covering lemma uses the lower bound for one joint count vector close to the target law.
+The packing lemma sums the upper bound over the joint count vectors in the typical set.
+What remains for those lemmas is a rounding step, which picks counts close to a target, and the continuity of entropy, which turns the count exponents into $n I(U ; X)$ up to a small error.
