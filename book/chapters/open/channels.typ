@@ -382,8 +382,8 @@ So the relay channel capacity is at least $max_(x_1) C(W_(x_1))$.
 
 Cover and El Gamal (1979) proved that every achievable rate is at most $C_"cs"$, and that every rate below $C_"df"$ is achievable.
 The upper bound is proved in the last section of this chapter.
-Decode-forward achievability is not in Lean.
-The theorem on direct transmission above is a weaker lower bound that is in Lean.
+Decode-forward achievability is in Lean, in the sections on block-Markov relay codes below.
+The theorem on direct transmission above is a simpler, weaker lower bound.
 
 #definition("Degraded relay channel", lean: "Meat.Relay.IsDegraded")[
   The relay channel $W$ is physically degraded if there is a DMC $K$ from $A_1 times B_1$ to $B$ with
@@ -445,7 +445,7 @@ So cut-set tightness is not the open problem.
 
 With the two coding theorems of Cover and El Gamal, this theorem gives the capacity $C_"cs" = C_"df"$ of the physically degraded relay channel.
 The cut-set upper bound is in Lean, in the last section of this chapter.
-Decode-forward achievability is not, so only the upper half of the capacity statement is in Lean.
+Decode-forward achievability is in Lean too, so the capacity of the physically degraded relay channel is a Lean theorem: see the section on the capacity of the degraded relay channel.
 
 #definition("Single-letter laws", lean: ("Meat.Relay.lawEntropy", "Meat.Relay.IsLaw"))[
   Let $k in NN$, and let the alphabets be $[a]$, $[a_1]$, $[b]$ and $[b_1]$.
