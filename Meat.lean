@@ -20,6 +20,7 @@ import Meat.Shannon.Types
 import Meat.Shannon.ChainRule
 import Meat.Shannon.Combinatorial
 import Meat.Shannon.EntropyRate
+import Meat.Shannon.MarkovLemma
 import Meat.Source.SlepianWolf
 import Meat.Source.SlepianWolfAchievability
 import Meat.Source.SlepianWolfConverse
