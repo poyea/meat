@@ -71,6 +71,7 @@ import Meat.Continuous.InfoBound
 import Meat.Continuous.AWGNQuantization
 import Meat.Continuous.AWGNCapacity
 import Meat.Continuous.WaterFilling
+import Meat.Continuous.GaussianMultiUser
 import Meat.Testing.Stein
 import Meat.Testing.Sanov
 import Meat.Testing.Chernoff
