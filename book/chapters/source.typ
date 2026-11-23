@@ -1118,3 +1118,69 @@ This form needs $D >= D_min$.
 For $D < D_min$, the set of achievable rates is empty, and its real infimum is $0$, not a meaningful value.
 The closure form covers both cases at once.
 Whether the boundary pair $(R(D), D)$ itself is achievable is not decided here, which is why the theorem is stated for the closure.
+
+== Wyner-Ziv coding
+#source("Meat.Source.WynerZiv")
+
+The encoder sees a source $X$, and the decoder also sees correlated side information $Y$.
+The decoder reconstructs $X$ within a distortion $D$.
+In this section, $p$ is a law on $S times T$, $V$ is the reconstruction alphabet and $d : S times V -> RR$ is a distortion measure.
+This section proves the converse of Wyner and Ziv (1976).
+The achievability part, by binning and covering, is not yet in Lean.
+
+#definition("Wyner-Ziv code", lean: ("Meat.WZCode", "Meat.WZCode.distortion"))[
+  A Wyner-Ziv code of length $n$ with $k$ indices is a pair of maps $f : S^n -> [k]$ and $g : [k] times T^n -> V^n$.
+  Its expected distortion is $sum_((x, y)) p^n (x, y) d(x, g(f(x), y))$.
+]
+
+#definition(
+  "Achievable pairs",
+  lean: ("Meat.WynerZiv.Achievable", "Meat.WynerZiv.achievableRegion"),
+)[
+  A pair $(R, D)$ is achievable if for every $epsilon > 0$ there exists $N$ such that for every $n >= N$ some code of length $n$ has $k <= e^(n R)$ and expected distortion at most $D + epsilon$.
+]
+
+#definition("Wyner-Ziv region", lean: "Meat.WynerZiv.rateRegion")[
+  The region is the set of pairs $(R, D)$ such that some law of $(X, Y, U)$, with $U$ in a finite set $[m]$, $(X, Y)$ marginal $p$ and $U -> X -> Y$ a Markov chain, and some map $phi : [m] times T -> V$ satisfy
+  $ EE d(X, phi(U, Y)) <= D, quad I(X ; U given Y) <= R. $
+]
+
+#theorem("Converse for one code", lean: "Meat.WynerZiv.code_mem_rateRegion")[
+  For a code of length $n >= 1$ with $k$ indices, the pair $(log k \/ n, D(c))$ is in the Wyner-Ziv region.
+][
+  Let $M := f(X^n)$, and for each letter let $U_i := (M, Y_(-i))$, where $Y_(-i)$ is $Y^n$ with position $i$ blanked.
+  First, $log k >= H(M) >= H(M given Y^n) >= I(X^n ; M given Y^n)$.
+  By the chain rule, $I(X^n ; M given Y^n) = sum_i I(X_i ; M given Y^n, X^(i - 1))$.
+  Under $p^n$, the letter $(X_i, Y_i)$ is independent of the other letters $R_i$, so $H(X_i given Y_i, R_i) = H(X_i given Y_i)$.
+  Since $(Y^n, X^(i - 1))$ is a function of $(R_i, Y_i)$, this gives $H(X_i given Y^n, X^(i - 1)) >= H(X_i given Y_i)$.
+  Since $(U_i, Y_i)$ is a function of $(M, Y^n, X^(i - 1))$, also $H(X_i given M, Y^n, X^(i - 1)) <= H(X_i given U_i, Y_i)$.
+  So each summand is at least $I(X_i ; U_i given Y_i)$.
+  The auxiliary $U_i$ is a function of $X_i$ and $R_i$, so the independence also gives the Markov chain $U_i -> X_i -> Y_i$.
+  For time sharing, let $Q$ be uniform on $[n]$ and set $(X, Y, U) := (X_Q, Y_Q, (Q, U_Q))$.
+  As in the Berger-Tung converse, each information quantity of this law is the average over the letters.
+  So $U -> X -> Y$ holds and $I(X ; U given Y) <= log k \/ n$.
+  The map $phi$ reads $Q$, $M$ and $Y_(-Q)$ from $U$, fills in position $Q$ with $Y$, and returns letter $Q$ of $g(M, Y^n)$.
+  Its expected distortion is $D(c)$.
+]
+
+#lemma("Monotonicity", lean: "Meat.WynerZiv.rateRegion_mono")[
+  If $(R, D)$ is in the region, then so is every $(R', D')$ with $R' >= R$ and $D' >= D$.
+][
+  The conditions are upper bounds.
+]
+
+#theorem(
+  "Wyner-Ziv converse",
+  lean: (
+    "Meat.WynerZiv.mem_rateRegion_of_achievable",
+    "Meat.WynerZiv.achievableRegion_subset_closure_rateRegion",
+    "Meat.WynerZiv.closure_achievableRegion_subset_closure_rateRegion",
+  ),
+)[
+  If $(R, D)$ is achievable, then $(R, D + delta)$ is in the Wyner-Ziv region for every $delta > 0$.
+  So the closure of the achievable region is a subset of the closure of the region.
+][
+  Take a code of length $n = max(N, 1)$ for $delta$.
+  Then $k >= 1$ and $log k \/ n <= R$.
+  Apply the converse for one code and monotonicity, then let $delta -> 0$.
+]

@@ -598,3 +598,66 @@ For $K >= 3$ even the Gaussian case is open, and interference alignment (Cadambe
 
 The compound inner bound asks every receiver to decode all messages.
 Treating interference as noise and the Han-Kobayashi scheme for $K$ users are not formalized.
+
+
+== Two senders as a special case
+#source("Meat.Channel.MultipleAccessKTwo")
+
+This section checks that for $K = 2$ the polymatroid is the pentagon of the channel chapter, and that the two capacity regions agree.
+A family $A_0, A_1$ is read as the pair $A_0 times A_1$.
+
+#definition(
+  "The channel as a two-sender channel",
+  lean: (
+    "Meat.MACK.twoChannel",
+    "Meat.MACK.twoMap",
+    "Meat.MACK.twoMap_injective",
+    "Meat.MACK.jointPMF_map_twoMap",
+    "Meat.MACK.map_jointMeasure_twoMap",
+  ),
+)[
+  For a DMC $W$ from $product_(k < 2) A_k$ to $B$, the channel $W_2$ from $A_0 times A_1$ to $B$ is $W_2 (y given a_0, a_1) := W(y given (a_0, a_1))$.
+  The map $(x, y) |-> (x_0, x_1, y)$ is injective.
+  It sends the joint law of $(X, Y)$ for the product input $p_0 times p_1$ to the joint law of the pentagon for $W_2$, $p_0$ and $p_1$.
+][
+  Both laws give $(a_0, a_1, y)$ the weight $p_0 (a_0) p_1 (a_1) W(y given (a_0, a_1))$.
+]
+
+#lemma(
+  "Residual entropies for two senders",
+  lean: (
+    "Meat.MACK.residual_univ_two",
+    "Meat.MACK.residual_univ_two'",
+    "Meat.MACK.residual_compl_zero",
+    "Meat.MACK.residual_compl_one",
+    "Meat.MACK.residual_empty_two",
+  ),
+)[
+  $h([2]) = H(Y given X_0, X_1) = H(Y given X_1, X_0)$, $h({1}) = H(Y given X_1)$, $h({0}) = H(Y given X_0)$ and $h(emptyset) = H(Y)$.
+][
+  Each mask is an injective function of the listed coordinates, and the empty mask is constant.
+  Conditioning on an injective function of a variable is conditioning on the variable, and conditioning on a constant does nothing.
+]
+
+#proposition(
+  "Rank function for two senders",
+  lean: ("Meat.MACK.subsetInfo_zero_two", "Meat.MACK.subsetInfo_one_two", "Meat.MACK.subsetInfo_univ_two"),
+)[
+  In the pentagon law for $W_2$, $p_0$ and $p_1$,
+  $ I_p ({0}) = I(X_0; Y given X_1), quad I_p ({1}) = I(X_1; Y given X_0), quad I_p ([2]) = I((X_0, X_1); Y). $
+][
+  $I_p (S) = h(S^c) - h([2])$.
+  Use the residual entropies and move them to the pentagon law along the injective map.
+]
+
+#theorem(
+  "Polymatroid and pentagon",
+  lean: ("Meat.MACK.mem_polymatroid_two_iff", "Meat.MACK.capacityRegion_two"),
+)[
+  $R in cal(P)(p)$ if and only if $(R_0, R_1)$ is in the pentagon of $W_2$, $p_0$ and $p_1$.
+  The capacity region for $K = 2$ is the preimage of the capacity region of $W_2$ under $R |-> (R_0, R_1)$.
+][
+  The subsets of $[2]$ are $emptyset$, ${0}$, ${1}$ and $[2]$, and their constraints are $0 <= 0$ and the three pentagon constraints.
+  The map $R |-> (R_0, R_1)$ is a linear homeomorphism, so it commutes with convex hulls and closures.
+  The union over $p$ of its images of the polymatroids is the union of the pentagons over $(p_0, p_1)$.
+]
