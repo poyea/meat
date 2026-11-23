@@ -92,3 +92,4 @@ import Meat.Open.RelayConverse
 import Meat.Examples.Binary
 import Meat.Examples.Uniform
 import Meat.Examples.Noiseless
+import Meat.Examples.BSC
