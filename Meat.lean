@@ -94,3 +94,4 @@ import Meat.Examples.Uniform
 import Meat.Examples.Noiseless
 import Meat.Examples.BSC
 import Meat.Examples.BEC
+import Meat.Examples.HuffmanExample
