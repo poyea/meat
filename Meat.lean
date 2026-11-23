@@ -90,6 +90,7 @@ import Meat.Open.BroadcastConverse
 import Meat.Open.Relay
 import Meat.Open.RelayConverse
 import Meat.Open.RelayAchievability
+import Meat.Open.RelayDecodeForward
 import Meat.Examples.Binary
 import Meat.Examples.Uniform
 import Meat.Examples.Noiseless
