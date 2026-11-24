@@ -1651,3 +1651,79 @@ These are the two exact bounds behind the strong covering lemma and the packing 
 The covering lemma uses the lower bound for one joint count vector close to the target law.
 The packing lemma sums the upper bound over the joint count vectors in the typical set.
 What remains for those lemmas is a rounding step, which picks counts close to a target, and the continuity of entropy, which turns the count exponents into $n I(U ; X)$ up to a small error.
+
+
+== Strong covering and packing
+#source("Meat.Shannon.StrongCovering")
+
+This section proves the covering and packing bounds for strong typicality.
+Wyner-Ziv coding and similar binning schemes use them in place of the bounds for weak typicality.
+Throughout, $p$ is a target law on a product $B times U$ with marginal $p_U$, and $q = p_U$ is the law of the random codewords.
+The bounds come from the exact bounds for conditional type classes and from the continuity of one explicit function of the empirical joint law.
+
+#lemma("Rounding", lean: "Meat.exists_round")[
+  Let $w$ be a probability vector on $U$ and $N in NN$.
+  There are counts $k : U -> NN$ with $sum_u k(u) = N$, $|k(u) - N w(u)| <= |U|$ for every $u$, and $k(u) = 0$ whenever $w(u) = 0$.
+][
+  Pick $u_0$ with $w(u_0) > 0$.
+  Take $k(u) := floor(N w(u))$ for $u != u_0$, and give the rest to $u_0$.
+  Each floor loses less than $1$, so $u_0$ gains at most $|U|$.
+]
+
+#definition("Type exponent and mutual information", lean: ("Meat.typeExponent", "Meat.jointInfo"))[
+  For $P : B times U -> RR$ and $q : U -> RR$,
+  $ G(P, q) := sum_z eta(P(z)) - sum_b eta(sum_u P(b, u)) + sum_u (sum_b P(b, u)) log q(u), $
+  where $eta(t) = -t log t$.
+  The mutual information of $p$ is $I(p) := sum_b eta(p_B (b)) + sum_u eta(p_U (u)) - sum_z eta(p(z))$.
+]
+
+#lemma(
+  "Continuity and the value at the target",
+  lean: ("Meat.continuous_typeExponent", "Meat.typeExponent_marginal"),
+)[
+  $P |-> G(P, q)$ is continuous, and $G(p, p_U) = -I(p)$.
+][
+  The function $eta$ is continuous on $RR$, and $G$ is a finite sum of continuous terms.
+  At $q = p_U$, the last sum is $-sum_u eta(p_U (u))$.
+]
+
+#lemma("Exponent of a conditional type class", lean: "Meat.exp_countEntropy_mul_prod")[
+  Let $n >= 1$, and let $k : B -> U -> NN$ have total $n$, with $q(u) > 0$ whenever $sum_b k(b, u) > 0$.
+  Then
+  $ e^(sum_b H_"cnt" (k(b, dot))) product_u q(u)^(sum_b k(b, u)) = e^(n G(k \/ n, q)). $
+][
+  Write the product as $e^(sum_u c_u log q(u))$, which needs $q(u) > 0$ only where $c_u > 0$.
+  Termwise, $n eta(k \/ n) = k log n - k log k$, and $H_"cnt"$ is $N log N - sum k log k$ for each row total $N$.
+  The terms with $log n$ cancel because the total is $n$.
+]
+
+#theorem("Strong covering lemma", lean: "Meat.strong_covering")[
+  Let $p$ be nonnegative on $A times U$, and let $q$ be the law on $U$ with $q(u) = sum_a p(a, u)$.
+  For every $delta > 0$ there is $epsilon > 0$ such that for all large $n$ the following holds.
+  If $|N(a given x) \/ n - p_A (a)| <= epsilon$ for every $a$, and $N(a given x) = 0$ whenever $p_A (a) = 0$, then
+  $ P_(q^n) ((x, U^n) in T_delta^((n)) (p)) >= e^(-n (I(p) + delta)). $
+][
+  For each letter $a$, round $N(a given x)$ times the conditional law $p(a, dot) \/ p_A (a)$ to counts $k(a, dot)$.
+  For large $n$ and $epsilon <= min(rho, delta) \/ 4$, every entry of $k \/ n$ is within $2 epsilon$ of $p$.
+  So the conditional type class $T(k given x)$ lies in the typical set.
+  The rounding gives $k(a, u) > 0$ only where $p(a, u) > 0$, so $q(u) > 0$ there.
+  By the lower bound for conditional type classes and the exponent lemma, the probability is at least $e^(n G(k \/ n, q)) \/ (n + 1)^(|U| |A|)$.
+  By continuity, $G(k \/ n, q) >= -I(p) - delta \/ 2$.
+  For large $n$, $(n + 1)^(|U| |A|) <= e^(n delta \/ 2)$.
+]
+
+#theorem("Strong packing lemma", lean: "Meat.strong_packing")[
+  Let $q$ be the law on $U$ with $q(u) = sum_b p(b, u)$.
+  For every $delta > 0$ there is $epsilon > 0$ such that for all large $n$ and every $y in B^n$,
+  $ P_(q^n) ((y, U^n) in T_epsilon^((n)) (p)) <= e^(-n (I(p) - delta)). $
+][
+  Group the typical $u$ by their joint counts $k$ with $y$.
+  There are at most $(n + 1)^(|B| |U|)$ such count vectors, and $u$ lies in the class $T(k given y)$.
+  If some $u$ with $q(u) = 0$ has a positive count, the class has probability $0$.
+  Otherwise, the upper bound for conditional type classes and the exponent lemma give at most $e^(n G(k \/ n, q))$.
+  The vector $k \/ n$ is within $epsilon$ of $p$, so by continuity $G(k \/ n, q) <= -I(p) + delta \/ 2$.
+  For large $n$, the number of classes is at most $e^(n delta \/ 2)$.
+]
+
+The support condition in the covering lemma holds almost surely for a source with law $p_A$: a letter of probability $0$ never occurs.
+The packing lemma needs no condition, because the probability of a class with an impossible letter is $0$.

@@ -957,3 +957,115 @@ The operational capacity theorems for these channels are not formalized.
   The Gaussian maximizes differential entropy for a given variance, and the variances of independent variables add.
   These are the steps that bound $I((X_1, X_2); Y)$ in the converse for the multiple access channel and $I(X; Y_2)$ in the converse for the broadcast channel.
 ]
+
+
+== Parallel Gaussian channels
+#source("Meat.Continuous.ParallelGaussian")
+
+There are finitely many Gaussian channels $i in iota$ with noise variances $N_i > 0$.
+In each of $n$ channel uses the sender puts one real number on each channel, and the total power over all channels and all uses is at most $n P$.
+This section proves that the operational capacity is the water-filling capacity of the previous chapter.
+
+#lemma("Random coding for one Gaussian channel", lean: "Meat.AWGN.achievable_of_lt")[
+  If $P >= 0$, $N > 0$ and $0 <= R < C(P, N)$, then $R$ is achievable for the Gaussian channel.
+][
+  The block quantization of the Gaussian chapter gives a finite channel with enough information, and random coding on it gives the codes.
+]
+
+#definition(
+  "Codes for parallel channels",
+  lean: (
+    "Meat.Parallel.noise",
+    "Meat.Parallel.isProbabilityMeasure_noise",
+    "Meat.Parallel.Code",
+    "Meat.Parallel.Code.errorProb",
+    "Meat.Parallel.Code.avgError",
+    "Meat.Parallel.Achievable",
+    "Meat.Parallel.achievable_zero",
+  ),
+)[
+  The noise is the product over $i$ of the Gaussian noise vectors of variance $N_i$ and length $n$.
+  A code of length $n$ with $k$ messages has codewords $x(m) in RR^(iota times [n])$ with $sum_i sum_t x(m)_(i, t)^2 <= n P$, and a measurable decoder.
+  The error probability of $m$ is the probability that the decoder does not return $m$ when $x(m) + Z$ is received.
+  Achievable rates are defined as for one Gaussian channel, and the rate $0$ is achievable.
+]
+
+#definition(
+  "Product codes",
+  lean: (
+    "Meat.Parallel.prodEquiv",
+    "Meat.Parallel.productCode",
+    "Meat.Parallel.errorProb_productCode_le",
+    "Meat.Parallel.avgError_productCode_le",
+  ),
+)[
+  Given a Gaussian code with power $Q_i$ and $k_i$ messages for each channel, with $sum_i Q_i <= P$, the product code sends the codeword of message $m_i$ on channel $i$ and decodes each channel separately.
+  Its messages are $product_i [k_i]$, numbered by a bijection with $[product_i k_i]$.
+  Its error probability is at most the sum of the error probabilities of the components, and so is its average error probability.
+][
+  The product code errs only if some component errs, and the noise on channel $i$ has the law of the component noise.
+  For the average, a function of the $i$th message summed over all message vectors counts each value $product_(j != i) k_j$ times.
+]
+
+#theorem("Achievability", lean: "Meat.Parallel.achievable_of_lt")[
+  If there is at least one channel, $P >= 0$, $N_i > 0$ and $R$ is below the water-filling capacity, then $R$ is achievable.
+][
+  Let $p$ be the water-filling allocation, so the capacity is $sum_i C(p_i, N_i)$.
+  With $delta := (sum_i C(p_i, N_i) - R) \/ |iota|$, the rates $R_i := max(C(p_i, N_i) - delta, 0)$ are achievable for the single channels and $sum_i R_i >= R$.
+  Take component codes with average error at most $epsilon \/ |iota|$ and form the product code.
+  Its power is at most $n sum_i p_i = n P$.
+]
+
+#lemma("Spreading power over time", lean: "Meat.Parallel.sum_awgnCapacity_le")[
+  If $P_(i, t) >= 0$ and $sum_i sum_t P_(i, t) <= n P$, then $sum_i sum_t C(P_(i, t), N_i)$ is at most $n$ times the water-filling capacity.
+][
+  View the $n |iota|$ channels $(i, t)$ with noise $N_i$ as one parallel system with budget $n P$.
+  The water level of the original system fills each copy of channel $i$ with $p_i^nu$, so it uses exactly $n P$.
+  By optimality of water filling, the sum is at most $n sum_i C(p_i^nu, N_i)$.
+]
+
+#lemma(
+  "Golden formula with a product Gaussian reference",
+  lean: (
+    "Meat.Parallel.map_noise_add",
+    "Meat.Parallel.map_noise_add_absolutelyContinuous",
+    "Meat.Parallel.sum_mul_log_sub_log_le",
+  ),
+)[
+  The law of $x + Z$ is the product of the Gaussians of means $x_(i, t)$ and variances $N_i$.
+  It is absolutely continuous with respect to the product $rho$ of centered Gaussians of variances $S_(i, t) > 0$.
+  For every measurable map $d$ into a finite set,
+  $ sum_j P_x (d = j) (log P_x (d = j) - log rho(d = j)) <= sum_i sum_t (1/2 log(S_(i, t) \/ N_i) - 1/2 + (x_(i, t)^2 + N_i) / (2 S_(i, t))). $
+][
+  The density of the law of $x + Z$ with respect to $rho$ is the product of the Gaussian likelihood ratios.
+  The data processing step of the Gaussian converse bounds the left side by the expected log-density, which is computed coordinate by coordinate.
+]
+
+#theorem(
+  "Converse",
+  lean: (
+    "Meat.Parallel.Code.measurable_dec_add",
+    "Meat.Parallel.Code.channel",
+    "Meat.Parallel.Code.channel_apply",
+    "Meat.Parallel.Code.inputMutualInfo_channel_le",
+    "Meat.Parallel.Code.one_sub_mul_log_le",
+    "Meat.Parallel.capacity_nonneg",
+    "Meat.Parallel.le_capacity_of_achievable",
+  ),
+)[
+  For every code, $(1 - overline(lambda)) log k <= n C_"wf" + log 2$, where $C_"wf" >= 0$ is the water-filling capacity.
+  Hence every achievable rate is at most $C_"wf"$.
+][
+  The code induces a finite channel from messages to decoded messages.
+  With uniform messages, take $S_(i, t) := overline(P)_(i, t) + N_i$, where $overline(P)_(i, t)$ is the average power of the codewords on channel $i$ at time $t$.
+  Averaged over messages, the golden formula gives $sum_i sum_t C(overline(P)_(i, t), N_i)$, which is at most $n C_"wf"$ by spreading power over time.
+  Fano's inequality finishes the bound, and the rate statement follows as for one Gaussian channel.
+]
+
+#theorem("Capacity of parallel Gaussian channels", lean: "Meat.Parallel.closure_achievable_eq")[
+  If there is at least one channel, $P >= 0$ and $N_i > 0$ for all $i$, then
+  $ overline({R >= 0 : R "achievable"}) = [0, C_"wf"], quad C_"wf" = sum_i 1/2 log(max(nu, N_i) \/ N_i), $
+  where $nu$ is the water level.
+][
+  Achievability and the converse, as for one Gaussian channel.
+]

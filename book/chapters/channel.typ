@@ -1567,3 +1567,164 @@ Gallager's bound gives an error probability that decays exponentially in the blo
 ]
 
 The sphere packing bound, the matching upper bound on the exponent for rates near capacity, is not formalized.
+
+
+== Wiretap achievability
+#source("Meat.Channel.WiretapAchievability")
+
+This section proves that every rate below $I(X; Y) - I(X; Z)$ is achievable for every wiretap channel.
+With Wyner's converse, this gives the secrecy capacity of the physically degraded wiretap channel.
+The code is a random codebook with a randomization index.
+The legitimate receiver decodes both the message and the index.
+Secrecy follows because an eavesdropper who knows the message could decode the index, so the index uses up all the information that the eavesdropper gets.
+
+#definition(
+  "Marginal channels",
+  lean: (
+    "Meat.Wiretap.toB",
+    "Meat.Wiretap.toE",
+    "Meat.Wiretap.toB_apply",
+    "Meat.Wiretap.toE_apply",
+    "Meat.Wiretap.sum_mul_blockProb_toB",
+    "Meat.Wiretap.sum_mul_blockProb_toE",
+    "Meat.Wiretap.jointPMF_toB",
+    "Meat.Wiretap.jointPMF_toE",
+  ),
+)[
+  The channel $W_B$ from $A$ to $B$ is the law of $Y$, and the channel $W_E$ from $A$ to $E$ is the law of $Z$.
+  So $W_B (b given a) = sum_e W(b, e given a)$, and the same holds for $W_E$.
+  Sums of a function of $y^n$ against $W^n$ are sums against $W_B^n$, and the same holds for $z^n$ and $W_E^n$.
+  The joint laws of $W_B$ and $W_E$ with an input law $p$ are the push-forwards of the joint law of $W$ and $p$.
+]
+
+#lemma(
+  "Entropy of products and concavity",
+  lean: (
+    "Meat.Wiretap.pmfH",
+    "Meat.Wiretap.sum_negMulLog_blockProb",
+    "Meat.Wiretap.sum_iidProb_mul_apply",
+    "Meat.Wiretap.pmfH_concave",
+  ),
+)[
+  Let $H(q) := sum_s -q(s) log q(s)$.
+  For a DMC $V$ and $x in A^n$, $H(V^n (dot given x)) = sum_(i = 1)^n H(V(dot given x_i))$.
+  Under the i.i.d. law $p^n$, the letter $x_i$ has law $p$.
+  For weights $w_j >= 0$ with $sum_j w_j = 1$ and laws $P_j$, $sum_j w_j H(P_j) <= H(sum_j w_j P_j)$.
+][
+  For the first claim, write $-log product_i V(z_i given x_i) = sum_i -log V(z_i given x_i)$ and sum out the other letters.
+  The last claim is Jensen's inequality for the concave function $t |-> -t log t$, at each point.
+]
+
+#definition(
+  "Codebook code",
+  lean: (
+    "Meat.Wiretap.bookCode",
+    "Meat.Wiretap.errorProb_bookCode_le",
+    "Meat.Wiretap.bookMeasure",
+    "Meat.Wiretap.isProbabilityMeasure_bookMeasure",
+    "Meat.Wiretap.eveDec",
+    "Meat.Wiretap.measureReal_eveDec_ne",
+  ),
+)[
+  Let $C : M times L -> A^n$ be a codebook.
+  The wiretap code of $C$ sends $C(m, l)$, and its decoder keeps the first component of the joint typicality decoder of $C$ for $W_B$.
+  Its error probability at $(m, l)$ is at most the error probability of the typicality code of $C$ for $W_B$.
+  Let $mu_C$ be the code measure of $(U, Y^n, Z^n)$ with $U = (M, L)$ uniform.
+  The eavesdropper decoder uses $m$ and $z^n$ and the typicality decoder of the row $C(m, dot)$ for $W_E$.
+  Its error probability under $mu_C$ is the average error of these typicality codes.
+]
+
+#lemma(
+  "Entropies of a codebook code",
+  lean: (
+    "Meat.Wiretap.bookMeasure_pair",
+    "Meat.Wiretap.bookMeasure_out",
+    "Meat.Wiretap.entropy_out_bookMeasure",
+    "Meat.Wiretap.condEntropy_out_bookMeasure",
+  ),
+)[
+  Under $mu_C$, $P(Z^n = z, U = u) = W_E^n (z given C(u)) \/ |M times L|$.
+  So $H(Z^n)$ is the entropy of the average of the laws $W_E^n (dot given C(u))$, and
+  $ H(Z^n given U) = 1 / (|M| |L|) sum_u sum_(i = 1)^n H(W_E (dot given C(u)_i)). $
+][
+  The first identity follows from the marginal channel lemma.
+  For the second one, $H(Z^n, U) = log (|M| |L|) + 1 / (|M| |L|) sum_u H(W_E^n (dot given C(u)))$ by $-x y log (x y) = -x y log x - x y log y$, and $H(U) = log (|M| |L|)$.
+]
+
+#lemma("Leakage of a codebook code", lean: "Meat.Wiretap.leakage_bookCode_le")[
+  Let $P_E$ be the error probability of the eavesdropper decoder.
+  Then
+  $ I(M; Z^n) <= H(Z^n) - H(Z^n given U) - log |L| + log 2 + P_E log |L|. $
+][
+  The identity $I(M; Z^n) = H(Z^n) - H(Z^n given U) - H(L given M) + H(L given Z^n, M)$ follows from the definitions.
+  The messages are uniform, so $H(L given M) = log |L|$.
+  Fano's inequality with the eavesdropper decoder gives $H(L given Z^n, M) <= log 2 + P_E log |L|$.
+]
+
+Now let the codebook be random, with all letters i.i.d. $p$.
+Write $w(C) := product_u p^n (C(u))$.
+
+#lemma(
+  "Averages over the codebook",
+  lean: (
+    "Meat.Wiretap.sum_prod_mul_row",
+    "Meat.Wiretap.sum_condEntropy_out",
+    "Meat.Wiretap.sum_entropy_out_le",
+    "Meat.Wiretap.sum_eveError_le",
+    "Meat.Wiretap.sum_bobError_le",
+  ),
+)[
+  Let $q$ be the law of $Z$ for the input law $p$.
+  Then
+  $ sum_C w(C) H_C (Z^n given U) = n sum_a p(a) H(W_E (dot given a)), quad sum_C w(C) H_C (Z^n) <= n H(q). $
+  The averages of the eavesdropper error and of the legitimate receiver error are at most the random coding bounds of the point-to-point section, for the channels $W_E$ with $|L|$ messages and $W_B$ with $|M| |L|$ messages.
+][
+  Each row $C(m, dot)$ of a random codebook is itself a random codebook, so averages of functions of one row are averages over random codebooks with $|L|$ codewords.
+  The letter $C(u)_i$ has law $p$, which gives the first identity.
+  The average of the laws of $Z^n$ is $q^n$, so the concavity lemma gives the inequality, and $H(q^n) = n H(q)$.
+]
+
+#lemma(
+  "Secrecy rate in terms of the marginal channels",
+  lean: ("Meat.Wiretap.inputMutualInfo_toE", "Meat.Wiretap.secrecyRate_eq"),
+)[
+  $I(X; Z) = H(q) - sum_a p(a) H(W_E (dot given a))$, and the secrecy rate of $p$ is $I_(W_B)(p) - I_(W_E)(p)$.
+]
+
+#lemma("A good codebook", lean: "Meat.Wiretap.exists_book")[
+  For every $n >= 1$, $k$, $l$ and typicality parameter $gamma$, there is a codebook $C$ with
+  $ overline(lambda)_B (C) + I_C (M; Z^n) / n <= beta_B + (n I(X; Z) - log l + log 2 + beta_E log l) / n, $
+  where $overline(lambda)_B$ is the average error of the typicality code for $W_B$, and $beta_B$ and $beta_E$ are the two random coding bounds.
+][
+  Average the leakage bound over the codebook with the averages above, and add the average error.
+  Some codebook is at most the average.
+]
+
+#theorem("Wyner's achievability", lean: ("Meat.Wiretap.achievable_of_lt", "Meat.Wiretap.achievable_zero"))[
+  If $0 <= R < I(X; Y) - I(X; Z)$ for some input law $p$, then $R$ is an achievable secrecy rate.
+  If $A$ is nonempty, the rate $0$ is achievable.
+][
+  Let $g := I(X; Y) - I(X; Z) - R$ and $eta := min(g, epsilon) \/ 16$.
+  Take $k := ceil(e^(n R))$ messages and $l := ceil(e^(n R_L))$ indices, with $R_L := max(I(X; Z) - 4 eta, 0)$.
+  Then $R + R_L <= I(X; Y) - 4 eta$, so the receiver term of $beta_B$ is at most $4 e^(-n eta)$.
+  Also $(l - 1) e^(-n (I(X; Z) - 3 eta)) <= e^(-n eta)$, so the eavesdropper term of $beta_E$ is small.
+  Since $n (I(X; Z) - 4 eta) <= log l <= log 2 + n I(X; Z)$, the leakage term is at most $4 eta + log 2 \/ n + beta_E (log 2 \/ n + I(X; Z))$.
+  For large $n$, the bound of the good codebook lemma is at most $epsilon$.
+  Both the average error and the leakage per letter are then at most $epsilon$.
+  For the rate $0$, one message suffices: there is no error and no leakage.
+]
+
+#theorem(
+  "Secrecy capacity of the degraded wiretap channel, Wyner",
+  lean: "Meat.Wiretap.closure_achievable_eq",
+)[
+  For a physically degraded channel with $A$ nonempty, the closure of the set of achievable rates $R >= 0$ is $[0, C_s (W)]$.
+][
+  The converse gives the inclusion in $[0, C_s]$.
+  If $C_s = 0$, the rate $0$ is achievable.
+  Otherwise every $R in [0, C_s)$ is below the secrecy rate of some $p$, so it is achievable, and the closure of $[0, C_s)$ is $[0, C_s]$.
+]
+
+Achievability holds for every wiretap channel, not only for degraded ones.
+For a general channel, Csiszár and Körner add an auxiliary variable $V$ and a channel prefix from $V$ to $X$, and the capacity is the supremum of $I(V; Y) - I(V; Z)$.
+Their converse uses the Csiszár sum identity, which is not in Lean.
