@@ -138,8 +138,8 @@ Each single-block error is a decoding error of a superposition code, and the ave
   lean: (
     "Meat.Relay.currentMessage_castSucc",
     "Meat.Relay.previousMessage_succ",
-    "Meat.Relay.errorProb_ne_top'",
-    "Meat.Relay.avgError_le_ofReal'",
+    "Meat.RelayCode.errorProb_ne_top",
+    "Meat.RelayCode.avgError_le_ofReal",
     "Meat.Relay.relayDecoder",
     "Meat.Relay.destDecoder",
     "Meat.Relay.dfCode",

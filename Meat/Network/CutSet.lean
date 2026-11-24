@@ -5,192 +5,6 @@ open scoped ENNReal
 
 namespace Meat
 
-namespace Causal
-
-variable {M X S : Type*} {n : ℕ}
-
-def IsCausal (inp : M → Fin n → (Fin n → S) → X) : Prop :=
-  ∀ m i z z', (∀ l : Fin n, l < i → z l = z' l) → inp m i z = inp m i z'
-
-noncomputable def seqProb (K : DMC X S) (inp : M → Fin n → (Fin n → S) → X) (m : M)
-    (z : Fin n → S) : ℝ≥0∞ :=
-  ∏ i, K (inp m i z) (z i)
-
-theorem sum_seqProb [Fintype S] [Nonempty S] (K : DMC X S) {inp : M → Fin n → (Fin n → S) → X}
-    (hc : IsCausal inp) (m : M) : ∑ z, seqProb K inp m z = 1 := by
-  classical
-  have h := sum_causal_prefix (fun j z s => K (inp m j z) s) (fun j z => sum_pmf_eq_one _)
-    (fun j z z' h => by rw [hc m j z z' h]) n 0 (by omega) (fun _ => Classical.arbitrary _)
-  simpa [seqProb] using h
-
-variable [Fintype M] [Nonempty M] [Fintype S] [Nonempty S]
-
-theorem sum_codeMass (K : DMC X S) {inp : M → Fin n → (Fin n → S) → X} (hc : IsCausal inp) :
-    ∑ ω : M × (Fin n → S), (Fintype.card M : ℝ≥0∞)⁻¹ * seqProb K inp ω.1 ω.2 = 1 := by
-  rw [Fintype.sum_prod_type]
-  simp only [← Finset.mul_sum, sum_seqProb K hc, mul_one]
-  exact sum_inv_card M
-
-noncomputable def codePMF (K : DMC X S) {inp : M → Fin n → (Fin n → S) → X}
-    (hc : IsCausal inp) : PMF (M × (Fin n → S)) :=
-  PMF.ofFintype _ (sum_codeMass K hc)
-
-noncomputable def letterPMF (K : DMC X S) {inp : M → Fin n → (Fin n → S) → X}
-    (hc : IsCausal inp) (i : Fin n) (d : S) : PMF ((M × (Fin n → S)) × S) :=
-  (codePMF K hc).map fun ω => ((ω.1, BC.padPrefix ω.2 i d), ω.2 i)
-
-def letterInput (inp : M → Fin n → (Fin n → S) → X) (i : Fin n) (u : M × (Fin n → S)) : X :=
-  inp u.1 i u.2
-
-theorem letterPMF_apply (K : DMC X S) {inp : M → Fin n → (Fin n → S) → X} (hc : IsCausal inp)
-    (i : Fin n) (d : S) (u : M × (Fin n → S)) (z : S) :
-    letterPMF K hc i d (u, z) =
-      ((letterPMF K hc i d).map Prod.fst) u * K (letterInput inp i u) z := by
-  classical
-  obtain ⟨m₀, a⟩ := u
-  set f : Fin n → (Fin n → S) → S → ℝ≥0∞ := fun j z s => K (inp m₀ j z) s
-  have hf : ∀ j z z', (∀ l : Fin n, l < j → z l = z' l) → f j z = f j z' := fun j z z' h => by
-    simp only [f, hc m₀ j z z' h]
-  rw [letterPMF, PMF.map_comp, PMF.map_apply, PMF.map_apply, tsum_fintype, tsum_fintype,
-    Fintype.sum_prod_type, Fintype.sum_prod_type, Finset.sum_mul]
-  simp only [Function.comp_def, codePMF, PMF.ofFintype_apply]
-  rw [Finset.sum_eq_single m₀, Finset.sum_eq_single m₀]
-  rotate_left
-  · intro m _ hm
-    simp [Ne.symm hm]
-  · simp
-  · intro m _ hm
-    simp [Ne.symm hm]
-  · simp
-  by_cases hC : ∀ l : Fin n, ¬(l : ℕ) < i → d = a l
-  · have e1 : ∀ y : Fin n → S, ((m₀, a), z) = ((m₀, BC.padPrefix y i d), y i) ↔
-        ∀ l : Fin n, (l : ℕ) < i + 1 → y l = Function.update a i z l := by
-      intro y
-      simp only [Prod.mk.injEq, true_and, funext_iff, BC.padPrefix, seqPrefix]
-      constructor
-      · rintro ⟨h1, h2⟩ l hl
-        by_cases hli : l = i
-        · subst hli
-          simp [h2]
-        · have : (l : ℕ) < i := by
-            rcases Nat.lt_succ_iff_lt_or_eq.1 hl with h' | h'
-            · exact h'
-            · exact absurd (Fin.ext h') hli
-          rw [Function.update_of_ne hli, h1 l]
-          simp [this]
-      · intro h
-        refine ⟨fun l => ?_, by rw [h i (by omega)]; simp⟩
-        by_cases hl : (l : ℕ) < i
-        · have hli : l ≠ i := fun e => by subst e; omega
-          simp [hl, h l (by omega), Function.update_of_ne hli]
-        · simp [hl, hC l hl]
-    have e2 : ∀ y : Fin n → S, (m₀, a) = (m₀, BC.padPrefix y i d) ↔
-        ∀ l : Fin n, (l : ℕ) < i → y l = a l := by
-      intro y
-      simp only [Prod.mk.injEq, true_and, funext_iff, BC.padPrefix, seqPrefix]
-      constructor
-      · intro h l hl
-        rw [h l]
-        simp [hl]
-      · intro h l
-        by_cases hl : (l : ℕ) < i
-        · simp [hl, h l hl]
-        · simp [hl, hC l hl]
-    have s1 : ∀ (y : Fin n → S) [Decidable (((m₀, a), z) =
-        ((m₀, BC.padPrefix y i d), y i))], (if ((m₀, a), z) = ((m₀, BC.padPrefix y i d), y i) then
-        (Fintype.card M : ℝ≥0∞)⁻¹ * seqProb K inp m₀ y else 0) = (Fintype.card M : ℝ≥0∞)⁻¹ *
-        (if ∀ l : Fin n, (l : ℕ) < i + 1 → y l = Function.update a i z l then
-          ∏ j, f j y (y j) else 0) := fun y _ => by
-      by_cases h : ∀ l : Fin n, (l : ℕ) < i + 1 → y l = Function.update a i z l
-      · rw [ite_eq_left ((e1 y).2 h), ite_eq_left h]
-        rfl
-      · rw [ite_eq_right (fun h' => h ((e1 y).1 h')), ite_eq_right h, mul_zero]
-    have s2 : ∀ (y : Fin n → S) [Decidable ((m₀, a) = (m₀, BC.padPrefix y i d))],
-        (if (m₀, a) = (m₀, BC.padPrefix y i d) then
-        (Fintype.card M : ℝ≥0∞)⁻¹ * seqProb K inp m₀ y else 0) = (Fintype.card M : ℝ≥0∞)⁻¹ *
-        (if ∀ l : Fin n, (l : ℕ) < i → y l = a l then ∏ j, f j y (y j) else 0) := fun y _ => by
-      by_cases h : ∀ l : Fin n, (l : ℕ) < i → y l = a l
-      · rw [ite_eq_left ((e2 y).2 h), ite_eq_left h]
-        rfl
-      · rw [ite_eq_right (fun h' => h ((e2 y).1 h')), ite_eq_right h, mul_zero]
-    simp_rw [s1, s2]
-    rw [← Finset.mul_sum, ← Finset.mul_sum,
-      sum_causal_prefix f (fun j z => sum_pmf_eq_one _) hf (n - (i + 1)) (i + 1) (by omega),
-      sum_causal_prefix f (fun j z => sum_pmf_eq_one _) hf (n - i) i (by omega),
-      prod_prefix_update f hf i a z]
-    simp only [f, letterInput]
-    ring
-  · have hne : ∀ y : Fin n → S, a ≠ BC.padPrefix y i d := fun y h => hC fun l hl => by
-      rw [h]
-      simp [BC.padPrefix, hl]
-    simp [hne]
-
-theorem letterPMF_eq (K : DMC X S) {inp : M → Fin n → (Fin n → S) → X} (hc : IsCausal inp)
-    (i : Fin n) (d : S) :
-    letterPMF K hc i d = DMC.jointPMF (fun u => K (letterInput inp i u))
-      ((letterPMF K hc i d).map Prod.fst) := by
-  ext ⟨u, z⟩
-  rw [DMC.jointPMF_apply, letterPMF_apply]
-
-noncomputable def letterLaw (K : DMC X S) {inp : M → Fin n → (Fin n → S) → X}
-    (hc : IsCausal inp) (i : Fin n) (d : S) : PMF X :=
-  ((letterPMF K hc i d).map Prod.fst).map (letterInput inp i)
-
-omit [Fintype M] [Nonempty M] [Fintype S] [Nonempty S] in
-theorem letterInput_pad {inp : M → Fin n → (Fin n → S) → X} (hc : IsCausal inp) (i : Fin n)
-    (d : S) (ω : M × (Fin n → S)) : letterInput inp i (ω.1, BC.padPrefix ω.2 i d) = inp ω.1 i ω.2 :=
-  hc ω.1 i _ _ fun l hl => by simp [BC.padPrefix, seqPrefix, show (l : ℕ) < i from hl]
-
-section Laws
-
-variable [MeasurableSpace M] [MeasurableSingletonClass M] [Fintype X] [MeasurableSpace X]
-  [MeasurableSingletonClass X] [MeasurableSpace S] [MeasurableSingletonClass S]
-
-omit [Fintype X] [MeasurableSingletonClass X] in
-theorem map_codePMF_input (K : DMC X S) {inp : M → Fin n → (Fin n → S) → X} (hc : IsCausal inp)
-    (i : Fin n) (d : S) :
-    (codePMF K hc).toMeasure.map (fun ω => (inp ω.1 i ω.2, ω.2 i)) =
-      K.jointMeasure (letterLaw K hc i d) := by
-  have e : (fun ω : M × (Fin n → S) => (inp ω.1 i ω.2, ω.2 i)) =
-      fun ω => (letterInput inp i (ω.1, BC.padPrefix ω.2 i d), ω.2 i) :=
-    funext fun ω => by rw [letterInput_pad hc]
-  rw [e, PMF.toMeasure_map _ _ (measurable_of_finite _), DMC.jointMeasure_eq_toMeasure,
-    letterLaw, ← jointPMF_comp_input_map, ← letterPMF_eq, letterPMF, PMF.map_comp]
-  rfl
-
-theorem condEntropy_letter {T : Type*} [Fintype T] [MeasurableSpace T]
-    [MeasurableSingletonClass T] (K : DMC X S) {inp : M → Fin n → (Fin n → S) → X}
-    (hc : IsCausal inp) (i : Fin n) (d : S) (h : S → T) :
-    H[fun ω : M × (Fin n → S) => h (ω.2 i) | fun ω => (ω.1, BC.padPrefix ω.2 i d) ;
-        (codePMF K hc).toMeasure] =
-      H[fun ω : X × S => h ω.2 | fun ω => ω.1 ; K.jointMeasure (letterLaw K hc i d)] := by
-  have hcomp := condEntropy_comp_input (fun x => (K x).map h)
-    ((letterPMF K hc i d).map Prod.fst) (letterInput inp i)
-  have e1 : DMC.jointMeasure (fun u => (K (letterInput inp i u)).map h)
-      ((letterPMF K hc i d).map Prod.fst) = (codePMF K hc).toMeasure.map
-        (fun ω => ((ω.1, BC.padPrefix ω.2 i d), h (ω.2 i))) := by
-    have e1a : DMC.jointPMF (fun u => (K (letterInput inp i u)).map h)
-        ((letterPMF K hc i d).map Prod.fst) = (DMC.jointPMF (fun u => K (letterInput inp i u))
-          ((letterPMF K hc i d).map Prod.fst)).map (fun ω => (ω.1, h ω.2)) := by
-      simp only [DMC.jointPMF, PMF.map_bind, PMF.map_comp, Function.comp_def]
-    rw [← letterPMF_eq] at e1a
-    rw [PMF.toMeasure_map _ _ (measurable_of_finite _), DMC.jointMeasure_eq_toMeasure, e1a,
-      letterPMF, PMF.map_comp]
-    rfl
-  have e2 : DMC.jointMeasure (fun x => (K x).map h) (letterLaw K hc i d) =
-      (K.jointMeasure (letterLaw K hc i d)).map (fun ω => (ω.1, h ω.2)) := by
-    rw [DMC.jointMeasure_eq_toMeasure, DMC.jointMeasure_eq_toMeasure,
-      PMF.toMeasure_map _ _ (measurable_of_finite _)]
-    congr 1
-    simp only [DMC.jointPMF, PMF.map_bind, PMF.map_comp, Function.comp_def]
-  rw [e1, condEntropy_map _ (measurable_of_finite _) measurable_snd measurable_fst] at hcomp
-  rw [letterLaw] at e2
-  rw [e2, condEntropy_map _ (measurable_of_finite _) measurable_snd measurable_fst] at hcomp
-  exact hcomp
-
-end Laws
-
-end Causal
 
 namespace DMN
 
@@ -248,19 +62,6 @@ noncomputable def cutSetBound (W : DMC (V → A) (V → B)) (s d : V) : ℝ :=
 end Rates
 
 end DMN
-
-private lemma condEntropy_seq_pad' {M S T : Type*} {n : ℕ} [Fintype M] [MeasurableSpace M]
-    [MeasurableSingletonClass M] [Fintype S] [MeasurableSpace S] [MeasurableSingletonClass S]
-    [Fintype T] [MeasurableSpace T] [MeasurableSingletonClass T] {K : Type*}
-    [MeasurableSpace K] (μ : Measure (K × (Fin n → S)))
-    (κ : K → M) (F : K × (Fin n → S) → T) (q : Fin n) (d : S) :
-    H[F | fun ω => (κ ω.1, seqPrefix ω.2 q) ; μ] =
-      H[F | fun ω => (κ ω.1, BC.padPrefix ω.2 q d) ; μ] :=
-  (condEntropy_cond_of_injective μ (Z := fun ω => (κ ω.1, seqPrefix ω.2 q))
-    (Z' := fun ω => (κ ω.1, BC.padPrefix ω.2 q d))
-    (e := Prod.map id fun p : Fin q → S => fun j : Fin n =>
-      if h : (j : ℕ) < q then p ⟨j, h⟩ else d)
-    (Function.injective_id.prodMap (BC.padPrefix_injective q d)) fun _ => rfl).symm
 
 namespace DMN
 
@@ -326,7 +127,7 @@ theorem mutualInfo_le_sum_cut (c : Code V M A B s d n) (W : DMC (V → A) (V →
       fun ω => (ω.1, BC.padPrefix ω.2 i b₀) ; μ] ≤
       H[fun ω : M × (Fin n → V → B) => fun v : ↥Sᶜ => ω.2 i v |
         fun ω => (ω.1, seqPrefix (fun j (v : ↥Sᶜ) => ω.2 j v) i) ; μ] := fun i => by
-    rw [← condEntropy_seq_pad' μ (fun m => m) _ i b₀]
+    rw [← BC.condEntropy_seq_pad μ (fun m => m) _ i b₀]
     exact condEntropy_le_condEntropy_comp (μ := μ) (measurable_of_finite _)
       (measurable_of_finite _) fun p : M × (Fin i → V → B) => (p.1, fun j (v : ↥Sᶜ) => p.2 j v)
   have h5 : ∀ i, H[fun ω : M × (Fin n → V → B) => fun v : ↥Sᶜ => ω.2 i v |
@@ -350,23 +151,6 @@ theorem mutualInfo_le_sum_cut (c : Code V M A B s d n) (W : DMC (V → A) (V →
   linarith
 
 end DMN
-
-private lemma condMutualInfo_comp_right_le'' {Ω S T U U' : Type*} [MeasurableSpace Ω]
-    [Fintype S] [MeasurableSpace S] [MeasurableSingletonClass S]
-    [Fintype T] [MeasurableSpace T] [MeasurableSingletonClass T]
-    [Fintype U] [MeasurableSpace U] [MeasurableSingletonClass U]
-    [Fintype U'] [MeasurableSpace U'] [MeasurableSingletonClass U']
-    {μ : Measure Ω} [IsProbabilityMeasure μ] {X : Ω → S} {Y : Ω → T} {Z : Ω → U}
-    (hX : Measurable X) (hY : Measurable Y) (hZ : Measurable Z) (f : T → U') :
-    I[X : fun ω => f (Y ω) | Z ; μ] ≤ I[X : Y | Z ; μ] := by
-  rw [condMutualInfo_comm, condMutualInfo_eq_condEntropy_sub_condEntropy,
-    condMutualInfo_comm, condMutualInfo_eq_condEntropy_sub_condEntropy]
-  have := condEntropy_le_condEntropy_comp (μ := μ) hX (hY.prodMk hZ)
-    (fun p : T × U => (f p.1, p.2))
-  have e : ((fun p : T × U => (f p.1, p.2)) ∘ fun ω => (Y ω, Z ω)) =
-      fun ω => (f (Y ω), Z ω) := rfl
-  rw [e] at this
-  linarith
 
 namespace DMN
 
@@ -400,7 +184,7 @@ theorem cutRate_mixture (W : DMC (V → A) (V → B)) (p : Fin n → PMF (V → 
   rw [markovChain_def] at hm
   have hmY : I[fun ω : Fin n × (V → A) × (V → B) => ω.1 :
       fun ω => fun v : ↥Sᶜ => ω.2.2 v | fun ω => ω.2.1 ; ρ.toMeasure] = 0 := by
-    have h := condMutualInfo_comp_right_le'' (μ := ρ.toMeasure)
+    have h := condMutualInfo_comp_right_le (μ := ρ.toMeasure)
       (X := fun ω : Fin n × (V → A) × (V → B) => ω.1) (Y := fun ω => ω.2.2)
       (Z := fun ω => ω.2.1) (measurable_of_finite _) (measurable_of_finite _)
       (measurable_of_finite _) fun y (v : ↥Sᶜ) => y v

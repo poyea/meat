@@ -248,18 +248,6 @@ theorem letterPMF_apply (c : BlockCode M A B n)
 
 end Letter
 
-private lemma map_apply_inj {α β : Type*} (p : PMF α) {f : α → β} (hf : Function.Injective f)
-    (a : α) : p.map f (f a) = p a := by
-  classical
-  rw [PMF.map_apply, tsum_eq_single a fun a' ha' => by simp [hf.ne ha'.symm]]
-  simp
-
-private lemma measureReal_map_toMeasure {α β : Type*} [Finite α] [MeasurableSpace α]
-    [MeasurableSingletonClass α] [MeasurableSpace β] [MeasurableSingletonClass β]
-    (p : PMF α) (f : α → β) (x : β) : (p.toMeasure.map f).real {x} = (p.map f x).toReal := by
-  rw [PMF.toMeasure_map _ _ (measurable_of_finite _), measureReal_def,
-    PMF.toMeasure_apply_singleton _ _ (measurableSet_singleton _)]
-
 noncomputable def unifPMF (n : ℕ) [NeZero n] : PMF (Fin n) :=
   PMF.ofFintype (fun _ => (Fintype.card (Fin n) : ℝ≥0∞)⁻¹) (sum_inv_card (Fin n))
 
@@ -331,16 +319,6 @@ variable {Ω S T U : Type*} [Finite Ω] [MeasurableSpace Ω] [MeasurableSingleto
   [Fintype T] [MeasurableSpace T] [MeasurableSingletonClass T]
   [Fintype U] [MeasurableSpace U] [MeasurableSingletonClass U]
 
-private lemma sum_measureReal_inter {μ : Measure Ω} [IsProbabilityMeasure μ] {X : Ω → S}
-    (s : Set Ω) : ∑ x, μ.real {ω | X ω = x ∧ ω ∈ s} = μ.real s := by
-  have h := sum_measureReal_preimage_singleton (μ := μ.restrict s) Finset.univ (f := X)
-    fun x _ => (measurable_of_finite X) (measurableSet_singleton x)
-  simp only [Finset.coe_univ, Set.preimage_univ, measureReal_restrict_apply_univ] at h
-  rw [← h]
-  refine Finset.sum_congr rfl fun x _ => ?_
-  rw [measureReal_restrict_apply ((measurable_of_finite X) (measurableSet_singleton x))]
-  rfl
-
 private lemma measureReal_setOf {V : Type*} [MeasurableSpace V]
     [MeasurableSingletonClass V] (σ : PMF Ω) (F : Ω → V) (v : V) :
     σ.toMeasure.real {ω | F ω = v} = (σ.map F v).toReal := by
@@ -367,9 +345,9 @@ theorem markovChain_of_pmf (σ : PMF Ω) (X : Ω → S) (Y : Ω → T) (Z : Ω �
     simp [Prod.ext_iff]
   intro x y z
   have s1 : ∑ x', σ.toMeasure.real {ω | X ω = x' ∧ Y ω = y ∧ Z ω = z} =
-      σ.toMeasure.real {ω | Y ω = y ∧ Z ω = z} := sum_measureReal_inter _
+      σ.toMeasure.real {ω | Y ω = y ∧ Z ω = z} := sum_measureReal_inter (measurable_of_finite _) _
   have s2 : ∑ x', σ.toMeasure.real {ω | X ω = x' ∧ Y ω = y} = σ.toMeasure.real {ω | Y ω = y} :=
-    sum_measureReal_inter _
+    sum_measureReal_inter (measurable_of_finite _) _
   have f : ∀ x', σ.toMeasure.real {ω | X ω = x' ∧ Y ω = y ∧ Z ω = z} =
       σ.toMeasure.real {ω | X ω = x' ∧ Y ω = y} * (κ y z).toReal := fun x' => by
     rw [e3, e2, h, ENNReal.toReal_mul]
@@ -379,34 +357,6 @@ theorem markovChain_of_pmf (σ : PMF Ω) (X : Ω → S) (Y : Ω → T) (Z : Ω �
 
 end Markov
 
-section Monotone
-
-variable {Ω S T U U' : Type*} [MeasurableSpace Ω]
-  [Fintype S] [MeasurableSpace S] [MeasurableSingletonClass S]
-  [Fintype T] [MeasurableSpace T] [MeasurableSingletonClass T]
-  [Fintype U] [MeasurableSpace U] [MeasurableSingletonClass U]
-  [Fintype U'] [MeasurableSpace U'] [MeasurableSingletonClass U']
-  {μ : Measure Ω} [IsProbabilityMeasure μ]
-
-private lemma condMutualInfo_comp_right_le {X : Ω → S} {Y : Ω → T} {Z : Ω → U}
-    (hX : Measurable X) (hY : Measurable Y) (hZ : Measurable Z) (f : T → U') :
-    I[X : fun ω => f (Y ω) | Z ; μ] ≤ I[X : Y | Z ; μ] := by
-  rw [condMutualInfo_comm, condMutualInfo_eq_condEntropy_sub_condEntropy,
-    condMutualInfo_comm, condMutualInfo_eq_condEntropy_sub_condEntropy]
-  have := condEntropy_le_condEntropy_comp (μ := μ) hX (hY.prodMk hZ)
-    (fun p : T × U => (f p.1, p.2))
-  have e : ((fun p : T × U => (f p.1, p.2)) ∘ fun ω => (Y ω, Z ω)) =
-      fun ω => (f (Y ω), Z ω) := rfl
-  rw [e] at this
-  linarith
-
-private lemma condMutualInfo_comp_left_le {X : Ω → S} {Y : Ω → T} {Z : Ω → U}
-    (hX : Measurable X) (hY : Measurable Y) (hZ : Measurable Z) (f : S → U') :
-    I[fun ω => f (X ω) : Y | Z ; μ] ≤ I[X : Y | Z ; μ] := by
-  rw [condMutualInfo_comm, condMutualInfo_comm (X := X)]
-  exact condMutualInfo_comp_right_le hY hX hZ f
-
-end Monotone
 
 section Factor
 
@@ -691,7 +641,7 @@ theorem letter_eq₂ [Finite A] (c : BlockCode (M₁ × M₂) A (B₁ × B₂) n
 
 end Letters
 
-private lemma condEntropy_seq_pad {M S T : Type*} {n : ℕ} [Fintype M] [MeasurableSpace M]
+theorem condEntropy_seq_pad {M S T : Type*} {n : ℕ} [Fintype M] [MeasurableSpace M]
     [MeasurableSingletonClass M] [Fintype S] [MeasurableSpace S] [MeasurableSingletonClass S]
     [Fintype T] [MeasurableSpace T] [MeasurableSingletonClass T] {K : Type*}
     [MeasurableSpace K] (μ : Measure (K × (Fin n → S)))

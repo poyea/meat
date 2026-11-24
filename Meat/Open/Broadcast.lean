@@ -63,6 +63,84 @@ private lemma mutualInfo_pair_const (X : Ω → S) (Y : Ω → T) (c : U) :
 
 end Relabel
 
+section Shared
+
+variable {Ω S T U : Type*} [MeasurableSpace Ω]
+  [Fintype S] [MeasurableSpace S] [MeasurableSingletonClass S]
+  [Fintype T] [MeasurableSpace T] [MeasurableSingletonClass T]
+  [Fintype U] [MeasurableSpace U] [MeasurableSingletonClass U]
+  {μ : Measure Ω} [IsProbabilityMeasure μ] {X : Ω → S} {Y : Ω → T} {Z : Ω → U}
+
+theorem sum_measureReal_inter (hX : Measurable X) (s : Set Ω) :
+    ∑ x, μ.real {ω | X ω = x ∧ ω ∈ s} = μ.real s := by
+  have h := sum_measureReal_preimage_singleton (μ := μ.restrict s) Finset.univ (f := X)
+    fun x _ => hX (measurableSet_singleton x)
+  simp only [Finset.coe_univ, Set.preimage_univ, measureReal_restrict_apply_univ] at h
+  rw [← h]
+  refine Finset.sum_congr rfl fun x _ => ?_
+  rw [measureReal_restrict_apply (hX (measurableSet_singleton x))]
+  rfl
+
+theorem markovChain_of_factor (hX : Measurable X) (hY : Measurable Y) (hZ : Measurable Z)
+    (κ : T → U → ℝ)
+    (h : ∀ x y z, μ.real {ω | X ω = x ∧ Y ω = y ∧ Z ω = z} =
+      μ.real {ω | X ω = x ∧ Y ω = y} * κ y z) :
+    MarkovChain X Y Z μ := by
+  rw [markovChain_iff hX hY hZ]
+  intro x y z
+  have s1 : ∑ x', μ.real {ω | X ω = x' ∧ Y ω = y ∧ Z ω = z} = μ.real {ω | Y ω = y ∧ Z ω = z} :=
+    sum_measureReal_inter hX _
+  have s2 : ∑ x', μ.real {ω | X ω = x' ∧ Y ω = y} = μ.real {ω | Y ω = y} :=
+    sum_measureReal_inter hX _
+  have e1 : μ.real {ω | Y ω = y ∧ Z ω = z} = μ.real {ω | Y ω = y} * κ y z := by
+    rw [← s1, ← s2, Finset.sum_mul]
+    exact Finset.sum_congr rfl fun x' _ => h x' y z
+  rw [h, e1]
+  ring
+
+end Shared
+
+theorem map_apply_inj {α β : Type*} (p : PMF α) {f : α → β} (hf : Function.Injective f)
+    (a : α) : p.map f (f a) = p a := by
+  classical
+  rw [PMF.map_apply, tsum_eq_single a fun a' ha' => by simp [hf.ne ha'.symm]]
+  simp
+
+theorem measureReal_map_toMeasure {α β : Type*} [Finite α] [MeasurableSpace α]
+    [MeasurableSingletonClass α] [MeasurableSpace β] [MeasurableSingletonClass β]
+    (p : PMF α) (f : α → β) (x : β) : (p.toMeasure.map f).real {x} = (p.map f x).toReal := by
+  rw [PMF.toMeasure_map _ _ (measurable_of_finite _), measureReal_def,
+    PMF.toMeasure_apply_singleton _ _ (measurableSet_singleton _)]
+
+section Monotone
+
+variable {Ω S T U U' : Type*} [MeasurableSpace Ω]
+  [Fintype S] [MeasurableSpace S] [MeasurableSingletonClass S]
+  [Fintype T] [MeasurableSpace T] [MeasurableSingletonClass T]
+  [Fintype U] [MeasurableSpace U] [MeasurableSingletonClass U]
+  [Fintype U'] [MeasurableSpace U'] [MeasurableSingletonClass U']
+  {μ : Measure Ω} [IsProbabilityMeasure μ]
+
+theorem condMutualInfo_comp_right_le {X : Ω → S} {Y : Ω → T} {Z : Ω → U}
+    (hX : Measurable X) (hY : Measurable Y) (hZ : Measurable Z) (f : T → U') :
+    I[X : fun ω => f (Y ω) | Z ; μ] ≤ I[X : Y | Z ; μ] := by
+  rw [condMutualInfo_comm, condMutualInfo_eq_condEntropy_sub_condEntropy,
+    condMutualInfo_comm, condMutualInfo_eq_condEntropy_sub_condEntropy]
+  have := condEntropy_le_condEntropy_comp (μ := μ) hX (hY.prodMk hZ)
+    (fun p : T × U => (f p.1, p.2))
+  have e : ((fun p : T × U => (f p.1, p.2)) ∘ fun ω => (Y ω, Z ω)) =
+      fun ω => (f (Y ω), Z ω) := rfl
+  rw [e] at this
+  linarith
+
+theorem condMutualInfo_comp_left_le {X : Ω → S} {Y : Ω → T} {Z : Ω → U}
+    (hX : Measurable X) (hY : Measurable Y) (hZ : Measurable Z) (f : S → U') :
+    I[fun ω => f (X ω) : Y | Z ; μ] ≤ I[X : Y | Z ; μ] := by
+  rw [condMutualInfo_comm, condMutualInfo_comm (X := X)]
+  exact condMutualInfo_comp_right_le hY hX hZ f
+
+end Monotone
+
 namespace BC
 
 variable {A B₁ B₂ T V V₁ V₂ : Type*}

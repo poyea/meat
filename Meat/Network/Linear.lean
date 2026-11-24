@@ -133,26 +133,26 @@ section Construction
 
 variable {V : Type*} [Fintype V] [DecidableEq V] {N : Network V}
 
-private abbrev Edge (N : Network V) := Σ p : V × V, Fin (N.cap p.1 p.2)
+abbrev Edge (N : Network V) := Σ p : V × V, Fin (N.cap p.1 p.2)
 
-private def edg (N : Network V) (X Y : Finset V) : Finset (Edge N) :=
+def edg (N : Network V) (X Y : Finset V) : Finset (Edge N) :=
   (X ×ˢ Y).sigma fun p => (univ : Finset (Fin (N.cap p.1 p.2)))
 
 omit [Fintype V] [DecidableEq V] in
-private theorem mem_edg {X Y : Finset V} {e : Edge N} :
+theorem mem_edg {X Y : Finset V} {e : Edge N} :
     e ∈ edg N X Y ↔ e.1.1 ∈ X ∧ e.1.2 ∈ Y := by
   simp [edg]
 
 omit [Fintype V] [DecidableEq V] in
-private theorem card_edg (X Y : Finset V) :
+theorem card_edg (X Y : Finset V) :
     (edg N X Y).card = ∑ u ∈ X, ∑ v ∈ Y, N.cap u v := by
   simp [edg, card_sigma, sum_product]
 
-private def inFam {F : Type*} [Field F] {h : ℕ} (g : Edge N → Dual F (Fin h → F)) (u : V) :
+def inFam {F : Type*} [Field F] {h : ℕ} (g : Edge N → Dual F (Fin h → F)) (u : V) :
     (Σ w, Fin (N.cap w u)) → Dual F (Fin h → F) :=
   fun x => g ⟨(x.1, u), x.2⟩
 
-private def Good {F : Type*} [Field F] (N : Network V) (s : V) (T : Finset V) (h : ℕ)
+def Good {F : Type*} [Field F] (N : Network V) (s : V) (T : Finset V) (h : ℕ)
     (P : Finset V) (g : Edge N → Dual F (Fin h → F)) : Prop :=
   (∀ u ∈ P, u ≠ s → ∀ w, 0 < N.cap w u → w ∈ P) ∧
   (∀ u ∈ P, u ≠ s → ∀ v (i : Fin (N.cap u v)), g ⟨(u, v), i⟩ ∈ span F (Set.range (inFam g u))) ∧
@@ -160,7 +160,7 @@ private def Good {F : Type*} [Field F] (N : Network V) (s : V) (T : Finset V) (h
   ∀ S : Finset V, s ∈ S → P ⊆ S → (∃ t ∈ T, t ∉ S) →
     h ≤ finrank F ↥(span F (g '' ↑(edg N P Sᶜ))) + ∑ u ∈ S \ P, ∑ v ∈ Sᶜ, N.cap u v
 
-private theorem good_empty {F : Type*} [Field F] {s : V} {T : Finset V} {h : ℕ}
+theorem good_empty {F : Type*} [Field F] {s : V} {T : Finset V} {h : ℕ}
     (hT : ∀ t ∈ T, h ≤ N.minCut s t) : Good N s T h ∅ (0 : Edge N → Dual F (Fin h → F)) := by
   refine ⟨by simp, by simp, by simp, fun S hs _ ⟨t, ht, htS⟩ => ?_⟩
   rw [sdiff_empty]
@@ -169,7 +169,7 @@ private theorem good_empty {F : Type*} [Field F] {s : V} {T : Finset V} {h : ℕ
       ciInf_le' (fun S : {S : Finset V // s ∈ S ∧ t ∉ S} => N.cutValue S.1) ⟨S, hs, htS⟩
     _ ≤ _ := Nat.le_add_left _ _
 
-private theorem good_insert {F : Type*} [Field F] [Fintype F] {s : V} {T : Finset V}
+theorem good_insert {F : Type*} [Field F] [Fintype F] {s : V} {T : Finset V}
     (hs : s ∉ T) {h : ℕ} (hF : 2 ^ Fintype.card V * 2 ^ Fintype.card (Edge N) ≤ Fintype.card F)
     {P : Finset V} {g : Edge N → Dual F (Fin h → F)} (hg : Good N s T h P g) {u : V}
     (hu : u ∉ P) (hpred : u ≠ s → ∀ w, 0 < N.cap w u → w ∈ P) :
@@ -304,7 +304,7 @@ private theorem good_insert {F : Type*} [Field F] [Fintype F] {s : V} {T : Finse
     rw [min_le_iff] at hgen
     omega
 
-private theorem exists_good (hN : N.IsAcyclic) {s : V} {T : Finset V} (hs : s ∉ T) {h : ℕ}
+theorem exists_good (hN : N.IsAcyclic) {s : V} {T : Finset V} (hs : s ∉ T) {h : ℕ}
     (hT : ∀ t ∈ T, h ≤ N.minCut s t) {F : Type*} [Field F] [Fintype F]
     (hF : 2 ^ Fintype.card V * 2 ^ Fintype.card (Edge N) ≤ Fintype.card F) :
     ∀ n ≤ Fintype.card V, ∃ (P : Finset V) (g : Edge N → Dual F (Fin h → F)),
@@ -332,10 +332,12 @@ private theorem exists_good (hN : N.IsAcyclic) {s : V} {T : Finset V} (hs : s �
     · obtain ⟨g', hg'⟩ := good_insert hs hF hg hsP fun h => absurd rfl h
       exact ⟨insert s P, g', by rw [card_insert_of_notMem hsP, hPn], hg'⟩
 
-theorem exists_code_of_le_minCut (hN : N.IsAcyclic) {s : V} {T : Finset V} (hs : s ∉ T) {h : ℕ}
+theorem exists_linear_family (hN : N.IsAcyclic) {s : V} {T : Finset V} (hs : s ∉ T) {h : ℕ}
     (hT : ∀ t ∈ T, h ≤ N.minCut s t) {F : Type*} [Field F] [Fintype F]
     (hF : 2 ^ (Fintype.card V + ∑ u, ∑ v, N.cap u v) ≤ Fintype.card F) :
-    ∃ c : Code N s (Fin h → F) F, ∀ t ∈ T, c.Decodes t := by
+    ∃ g : Edge N → Dual F (Fin h → F),
+      (∀ u, u ≠ s → ∀ v (i : Fin (N.cap u v)), g ⟨(u, v), i⟩ ∈ span F (Set.range (inFam g u))) ∧
+      ∀ t ∈ T, span F (Set.range (inFam g t)) = ⊤ := by
   classical
   have hcard : Fintype.card (Edge N) = ∑ u, ∑ v, N.cap u v := by
     simp [Edge, Fintype.card_sigma, Fintype.sum_prod_type]
@@ -343,8 +345,16 @@ theorem exists_code_of_le_minCut (hN : N.IsAcyclic) {s : V} {T : Finset V} (hs :
     exists_good hN hs hT (F := F) (by rwa [hcard, ← pow_add]) _ le_rfl
   have hPu : P = univ := eq_univ_of_card P hP
   subst hPu
+  exact ⟨g, fun u hu v i => hL u (mem_univ u) hu v i, fun t ht => hD t ht (mem_univ t)⟩
+
+theorem exists_code_of_le_minCut (hN : N.IsAcyclic) {s : V} {T : Finset V} (hs : s ∉ T) {h : ℕ}
+    (hT : ∀ t ∈ T, h ≤ N.minCut s t) {F : Type*} [Field F] [Fintype F]
+    (hF : 2 ^ (Fintype.card V + ∑ u, ∑ v, N.cap u v) ≤ Fintype.card F) :
+    ∃ c : Code N s (Fin h → F) F, ∀ t ∈ T, c.Decodes t := by
+  classical
+  obtain ⟨g, hL, hD⟩ := exists_linear_family hN hs hT hF
   refine ⟨⟨fun u v m i => g ⟨(u, v), i⟩ m, fun u v hu => ?_⟩, fun t ht => ?_⟩
-  · have hmem := fun i => hL u (mem_univ u) hu v i
+  · have hmem := fun i => hL u hu v i
     simp only [mem_span_range_iff_exists_fun] at hmem
     choose c hc using hmem
     refine ⟨fun y i => ∑ x : Σ w, Fin (N.cap w u), c i x * y x.1 x.2, fun m => ?_⟩
@@ -361,7 +371,7 @@ theorem exists_code_of_le_minCut (hN : N.IsAcyclic) {s : V} {T : Finset V} (hs :
       have := congrFun (congrFun hm y.1) y.2
       simp only at this
       simp [inFam, this]
-    rw [hD t ht (mem_univ t)] at hker
+    rw [hD t ht] at hker
     rw [← sub_eq_zero, ← Module.forall_dual_apply_eq_zero_iff F]
     intro φ
     simpa using hker (mem_top (x := φ))

@@ -121,7 +121,16 @@ It needs neither Menger's theorem nor polynomials.
   Otherwise $x_a in.not U_(j, B_0)$, so the dimension grows by one, and the bound for $B_0$ gives the bound for $B$.
 ]
 
-#theorem("Linear codes achieve the min-cut", lean: "Meat.Network.exists_code_of_le_minCut")[
+#theorem(
+  "Linear codes achieve the min-cut",
+  lean: (
+    "Meat.Network.Good",
+    "Meat.Network.good_empty",
+    "Meat.Network.good_insert",
+    "Meat.Network.exists_good",
+    "Meat.Network.exists_code_of_le_minCut",
+  ),
+)[
   Let $V$ be finite, let the network be acyclic, let $s in V$, let $T subset.eq V$ with $s in.not T$, and let $h in NN$ with $op("mincut")(s, t) >= h$ for every $t in T$.
   Let $F$ be a finite field with $|F| >= 2^(|V| + sum_(u, v) c(u, v))$.
   Then there exists a network code with source $s$, message set $F^h$ and alphabet $F$ such that every $t in T$ decodes.
@@ -200,23 +209,23 @@ An edge is a triple $(u, v, i)$ with $i < c(u, v)$, and $E$ is the set of edges.
 #definition(
   "Edges and incoming families",
   lean: (
-    "Meat.Network.RLNC.Edge",
-    "Meat.Network.RLNC.edg",
-    "Meat.Network.RLNC.mem_edg",
-    "Meat.Network.RLNC.card_edg",
-    "Meat.Network.RLNC.inFam",
+    "Meat.Network.Edge",
+    "Meat.Network.edg",
+    "Meat.Network.mem_edg",
+    "Meat.Network.card_edg",
+    "Meat.Network.inFam",
   ),
 )[
   For sets $X$ and $Y$ of nodes, $E(X, Y)$ is the set of edges from $X$ to $Y$, and $|E(X, Y)| = sum_(u in X) sum_(v in Y) c(u, v)$.
   For a family $g$ indexed by edges and a node $u$, the incoming family of $u$ is the family of $g$ on the edges into $u$.
 ]
 
-#theorem("Linear codes as families", lean: "Meat.Network.RLNC.exists_linear_family")[
+#theorem("Linear codes as families", lean: "Meat.Network.exists_linear_family")[
   If $|F| >= 2^(|V| + |E|)$, there is a family $g$ of linear functionals on $F^h$, indexed by edges, such that
   every edge out of a node $u != s$ is in the span of the incoming family of $u$, and the incoming family of every sink spans the dual space.
 ][
   This is the construction of the section on linear codes, which builds the family one node at a time in a topological order.
-  The construction itself is stated there for codes; here its output is kept as a family of functionals.
+  The theorem there turns this family into a code.
 ]
 
 #definition(

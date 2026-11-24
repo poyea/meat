@@ -1,6 +1,7 @@
 import Meat.Channel.BroadcastAchievability
 import Meat.Channel.CodingTheorem
 import Meat.Shannon.Conditional
+import Meat.Open.Broadcast
 
 open MeasureTheory
 open scoped ENNReal
@@ -14,33 +15,6 @@ variable {Ω S T U : Type*} [MeasurableSpace Ω]
   [Fintype T] [MeasurableSpace T] [MeasurableSingletonClass T]
   [Fintype U] [MeasurableSpace U] [MeasurableSingletonClass U]
   {μ : Measure Ω} [IsProbabilityMeasure μ] {X : Ω → S} {Y : Ω → T} {Z : Ω → U}
-
-private lemma sum_measureReal_inter (hX : Measurable X) (s : Set Ω) :
-    ∑ x, μ.real {ω | X ω = x ∧ ω ∈ s} = μ.real s := by
-  have h := sum_measureReal_preimage_singleton (μ := μ.restrict s) Finset.univ (f := X)
-    fun x _ => hX (measurableSet_singleton x)
-  simp only [Finset.coe_univ, Set.preimage_univ, measureReal_restrict_apply_univ] at h
-  rw [← h]
-  refine Finset.sum_congr rfl fun x _ => ?_
-  rw [measureReal_restrict_apply (hX (measurableSet_singleton x))]
-  rfl
-
-private lemma markovChain_of_factor (hX : Measurable X) (hY : Measurable Y) (hZ : Measurable Z)
-    (κ : T → U → ℝ)
-    (h : ∀ x y z, μ.real {ω | X ω = x ∧ Y ω = y ∧ Z ω = z} =
-      μ.real {ω | X ω = x ∧ Y ω = y} * κ y z) :
-    MarkovChain X Y Z μ := by
-  rw [markovChain_iff hX hY hZ]
-  intro x y z
-  have s1 : ∑ x', μ.real {ω | X ω = x' ∧ Y ω = y ∧ Z ω = z} = μ.real {ω | Y ω = y ∧ Z ω = z} :=
-    sum_measureReal_inter hX _
-  have s2 : ∑ x', μ.real {ω | X ω = x' ∧ Y ω = y} = μ.real {ω | Y ω = y} :=
-    sum_measureReal_inter hX _
-  have e1 : μ.real {ω | Y ω = y ∧ Z ω = z} = μ.real {ω | Y ω = y} * κ y z := by
-    rw [← s1, ← s2, Finset.sum_mul]
-    exact Finset.sum_congr rfl fun x' _ => h x' y z
-  rw [h, e1]
-  ring
 
 omit [IsProbabilityMeasure μ] in
 private lemma condMutualInfo_pair {T' : Type*} [Fintype T'] [MeasurableSpace T']
@@ -97,6 +71,28 @@ noncomputable def errorProb [Fintype B] [Fintype B₁] [DecidableEq M]
 noncomputable def avgError [Fintype B] [Fintype B₁] [Fintype M] [DecidableEq M]
     (c : RelayCode M A A₁ B B₁ n) (W : DMC (A × A₁) (B × B₁)) : ℝ≥0∞ :=
   (∑ m, c.errorProb W m) / (Fintype.card M : ℝ≥0∞)
+
+theorem errorProb_ne_top [Fintype B] [Fintype B₁] [DecidableEq M]
+    (c : RelayCode M A A₁ B B₁ n) (W : DMC (A × A₁) (B × B₁)) (w : M) : c.errorProb W w ≠ ∞ :=
+  ENNReal.sum_ne_top.2 fun y _ => by
+    split_ifs
+    · simp
+    · exact ENNReal.prod_ne_top fun _ _ => PMF.apply_ne_top _ _
+
+theorem avgError_le_ofReal [Fintype B] [Fintype B₁] [Fintype M]
+    [DecidableEq M] [Nonempty M] (c : RelayCode M A A₁ B B₁ n) (W : DMC (A × A₁) (B × B₁))
+    {δ : ℝ} (h : ∑ w, (c.errorProb W w).toReal ≤ Fintype.card M * δ) :
+    c.avgError W ≤ ENNReal.ofReal δ := by
+  have hpos : (0 : ℝ) < Fintype.card M := Nat.cast_pos.2 Fintype.card_pos
+  have hδ : 0 ≤ δ :=
+    (mul_nonneg_iff_of_pos_left hpos).1
+      ((Finset.sum_nonneg fun m _ => ENNReal.toReal_nonneg).trans h)
+  have hcard : (Fintype.card M : ℝ≥0∞) ≠ 0 := by simp [Fintype.card_ne_zero]
+  rw [RelayCode.avgError, ENNReal.div_le_iff hcard (ENNReal.natCast_ne_top _),
+    ← ENNReal.ofReal_toReal (ENNReal.sum_ne_top.2 fun m _ => errorProb_ne_top c W m),
+    ENNReal.toReal_sum fun m _ => errorProb_ne_top c W m, ← ENNReal.ofReal_natCast,
+    ← ENNReal.ofReal_mul hδ]
+  exact ENNReal.ofReal_le_ofReal (by linarith)
 
 end RelayCode
 

@@ -436,27 +436,6 @@ theorem previousMessage_succ {nb : ℕ} (k₀ : K) (w : Fin nb → K) (k : Fin n
     previousMessage k₀ w k.succ = w k := by
   simp [previousMessage]
 
-theorem errorProb_ne_top' {M : Type*} {n : ℕ} [Fintype B] [Fintype B₁] [DecidableEq M]
-    (c : RelayCode M A A₁ B B₁ n) (W : DMC (A × A₁) (B × B₁)) (w : M) : c.errorProb W w ≠ ∞ :=
-  ENNReal.sum_ne_top.2 fun y _ => by
-    split_ifs
-    · simp
-    · exact ENNReal.prod_ne_top fun _ _ => PMF.apply_ne_top _ _
-
-theorem avgError_le_ofReal' {M : Type*} {n : ℕ} [Fintype B] [Fintype B₁] [Fintype M]
-    [DecidableEq M] [Nonempty M] (c : RelayCode M A A₁ B B₁ n) (W : DMC (A × A₁) (B × B₁))
-    {δ : ℝ} (h : ∑ w, (c.errorProb W w).toReal ≤ Fintype.card M * δ) :
-    c.avgError W ≤ ENNReal.ofReal δ := by
-  have hpos : (0 : ℝ) < Fintype.card M := Nat.cast_pos.2 Fintype.card_pos
-  have hδ : 0 ≤ δ :=
-    (mul_nonneg_iff_of_pos_left hpos).1 ((sum_nonneg fun m _ => ENNReal.toReal_nonneg).trans h)
-  have hcard : (Fintype.card M : ℝ≥0∞) ≠ 0 := by simp [Fintype.card_ne_zero]
-  rw [RelayCode.avgError, ENNReal.div_le_iff hcard (ENNReal.natCast_ne_top _),
-    ← ENNReal.ofReal_toReal (ENNReal.sum_ne_top.2 fun m _ => errorProb_ne_top' c W m),
-    ENNReal.toReal_sum fun m _ => errorProb_ne_top' c W m, ← ENNReal.ofReal_natCast,
-    ← ENNReal.ofReal_mul hδ]
-  exact ENNReal.ofReal_le_ofReal (by linarith)
-
 section Exists
 
 variable [Fintype A] [MeasurableSpace A] [MeasurableSingletonClass A]
@@ -561,7 +540,7 @@ theorem exists_dfCode_avgError_le (W : DMC (A × A₁) (B × B₁)) (pU : PMF A�
         _ ≤ ∑ w : Fin nb → K, dfBound W pU pX ε nb m (Fintype.card K) :=
             Finset.sum_le_sum fun w _ => sum_codebookWeight_errorProb_dfCode_le W pU pX ε k₀ w
         _ = _ := by rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul])
-  exact ⟨C.1, C.2, avgError_le_ofReal' _ W hC⟩
+  exact ⟨C.1, C.2, RelayCode.avgError_le_ofReal _ W hC⟩
 
 end Exists
 

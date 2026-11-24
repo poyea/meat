@@ -41,6 +41,28 @@ Nair and El Gamal (2007) proved that the achievable region is contained in $cal(
 Their proof uses the Csiszár sum identity, and it is not in Lean.
 The UV outer bound is known not to be tight in general.
 
+#lemma(
+  "Tools for finite laws",
+  lean: (
+    "Meat.sum_measureReal_inter",
+    "Meat.markovChain_of_factor",
+    "Meat.map_apply_inj",
+    "Meat.measureReal_map_toMeasure",
+    "Meat.condMutualInfo_comp_right_le",
+    "Meat.condMutualInfo_comp_left_le",
+  ),
+)[
+  Summing the probabilities of $X = x$ and an event over $x$ gives the probability of the event.
+  If the law of $(X, Y, Z)$ factors as the law of $(X, Y)$ times a function of $(y, z)$, then $X -> Y -> Z$.
+  The push-forward of a PMF by an injective map takes the same value at the image of a point.
+  The measure of a singleton under the push-forward of a PMF is the value of the pushed PMF.
+  Conditional mutual information does not increase when a map is applied to either of its first two variables.
+][
+  The first statement splits the event by the value of $X$.
+  For the second, summing the factorization over $x$ gives the law of $(Y, Z)$, and the criterion for Markov chains follows.
+  The last statement compares conditional entropies, since conditioning on a function of a variable gives at least as much entropy.
+]
+
 #definition("Superposition union", lean: "Meat.BC.superpositionUnion")[
   The superposition union $cal(S)(W)$ is the union of the superposition regions $cal(S)(p_U, p_X)$ over all $k in NN$, $p_U in Delta([k])$ and $p_X : [k] -> Delta(A)$.
 ]
@@ -195,6 +217,7 @@ All sets are finite.
   lean: (
     "Meat.BC.padPrefix",
     "Meat.BC.padPrefix_injective",
+    "Meat.BC.condEntropy_seq_pad",
     "Meat.BC.sum_codeMass",
     "Meat.BC.codePMF",
     "Meat.BC.codeMeasure_eq",
@@ -512,6 +535,8 @@ The proof first shows that every letter is still memoryless given the past.
   lean: (
     "Meat.RelayCode.letterPMF",
     "Meat.RelayCode.letterInput",
+    "Meat.RelayCode.input",
+    "Meat.RelayCode.isCausal",
     "Meat.RelayCode.letterPMF_apply",
     "Meat.RelayCode.letterPMF_eq",
     "Meat.RelayCode.letterLaw",
