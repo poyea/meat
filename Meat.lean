@@ -75,6 +75,7 @@ import Meat.Continuous.AWGNQuantization
 import Meat.Continuous.AWGNCapacity
 import Meat.Continuous.WaterFilling
 import Meat.Continuous.ParallelGaussian
+import Meat.Continuous.MIMO
 import Meat.Continuous.GaussianMultiUser
 import Meat.Testing.Stein
 import Meat.Testing.Sanov
