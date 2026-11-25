@@ -1069,3 +1069,110 @@ This section proves that the operational capacity is the water-filling capacity 
 ][
   Achievability and the converse, as for one Gaussian channel.
 ]
+
+== MIMO Gaussian channels
+#source("Meat.Continuous.MIMO")
+
+Let $E$ and $F$ be finite-dimensional real inner product spaces and $H : E -> F$ a linear map, the channel matrix.
+In each of $n$ channel uses the sender puts a vector $x_t in E$, the receiver sees $H x_t + Z_t$ in $F$, and $Z_t$ is isotropic Gaussian noise of variance $N$.
+The total power is $sum_t norm(x_t)^2 <= n P$.
+A singular value decomposition turns this channel into parallel Gaussian channels, one for each nonzero singular value.
+This section proves that the capacity is the water-filling capacity of those parallel channels.
+
+#definition("Singular value decomposition", lean: ("Meat.MIMO.SVD", "Meat.MIMO.SVD.Active"))[
+  A singular value decomposition of $H$ consists of an orthonormal basis $(v_j)_(j in iota)$ of $E$, an orthonormal basis $(u_i)_(i in kappa)$ of $F$, numbers $sigma_j >= 0$ and a map $e : iota -> kappa$, injective on $\{j : sigma_j > 0\}$, with $H v_j = sigma_j u_(e(j))$.
+  The active indices are those $j$ with $sigma_j > 0$.
+]
+
+#definition(
+  "Codes for the MIMO channel",
+  lean: (
+    "Meat.MIMO.noiseLetter",
+    "Meat.MIMO.noise",
+    "Meat.MIMO.isProbabilityMeasure_noiseLetter",
+    "Meat.MIMO.isProbabilityMeasure_noise",
+    "Meat.MIMO.Code",
+    "Meat.MIMO.Code.errorProb",
+    "Meat.MIMO.Code.avgError",
+    "Meat.MIMO.Achievable",
+    "Meat.MIMO.achievable_zero",
+  ),
+)[
+  One noise letter is the standard Gaussian on $F$ scaled by $sqrt(N)$, and the noise of length $n$ is the product of $n$ letters.
+  A code of length $n$ with $k$ messages has codewords $x(m) in E^n$ with $sum_t norm(x(m)_t)^2 <= n P$, and a measurable decoder on $F^n$.
+  The error probability of $m$ is the probability that the decoder does not return $m$ when $(H x(m)_t + Z_t)_t$ is received.
+  Achievable rates are defined as for one Gaussian channel, and the rate $0$ is achievable.
+]
+
+#lemma("Projected noise", lean: ("Meat.MIMO.SVD.project", "Meat.MIMO.SVD.map_noise_project"))[
+  For an active $j$ let $"proj"(z)_(j, t) := sigma_j^(-1) chevron.l u_(e(j)), z_t chevron.r$.
+  If $N >= 0$, the image of the noise under $"proj"$ is the noise of the parallel Gaussian channels with variances $N \/ sigma_j^2$.
+][
+  The coordinates $chevron.l u_i, Z_t chevron.r$ in an orthonormal basis are independent centered Gaussians of variance $N$.
+  Keeping the coordinates $e(j)$, which are distinct, and scaling by $sigma_j^(-1)$ gives independent Gaussians of variance $N \/ sigma_j^2$.
+]
+
+#theorem(
+  "Achievability",
+  lean: (
+    "Meat.MIMO.SVD.ofParallel",
+    "Meat.MIMO.SVD.avgError_ofParallel",
+    "Meat.MIMO.SVD.achievable_of_lt",
+  ),
+)[
+  If some index is active, $P >= 0$, $N > 0$ and $R$ is below the water-filling capacity of the parallel channels with noise $N \/ sigma_j^2$, then $R$ is achievable.
+][
+  A parallel code with codewords $c(m)_(j, t)$ gives the MIMO codeword $x(m)_t := sum_j c(m)_(j, t) v_j$, which has the same power since $(v_j)$ is orthonormal.
+  The receiver applies $"proj"$ and then the parallel decoder.
+  Since $"proj"(H x(m) + Z) = c(m) + "proj"(Z)$, the projected noise lemma shows that both codes have the same average error probability.
+  Achievability for parallel channels finishes the proof.
+]
+
+#theorem(
+  "Converse",
+  lean: (
+    "Meat.MIMO.Code.channel",
+    "Meat.MIMO.Code.inputMutualInfo_channel_le",
+    "Meat.MIMO.Code.one_sub_mul_log_le",
+    "Meat.MIMO.SVD.le_capacity_of_achievable",
+  ),
+)[
+  If some index is active, then for every code $(1 - overline(lambda)) log k <= n C_"wf" + log 2$, where $C_"wf"$ is the water-filling capacity of the parallel channels with noise $N \/ sigma_j^2$.
+  Hence every achievable rate is at most $C_"wf"$.
+][
+  The code induces a finite channel from messages to decoded messages.
+  In the coordinates $chevron.l u_i, dot chevron.r$ the output is a parallel Gaussian channel over $kappa$ with noise $N$ and inputs $chevron.l u_i, H x(m)_t chevron.r$.
+  The golden formula for parallel channels, with uniform messages and reference variances the average power plus $N$, bounds the mutual information by $sum_i sum_t C(overline(P)_(i, t), N)$.
+  Coordinates outside the image of the active indices carry no signal.
+  For an active $j$, $chevron.l u_(e(j)), H x chevron.r = sigma_j chevron.l v_j, x chevron.r$, so the term is $C(Q_(j, t), N \/ sigma_j^2)$ with $Q_(j, t)$ the average of $chevron.l v_j, x(m)_t chevron.r^2$.
+  By Bessel's inequality $sum_j sum_t Q_(j, t) <= n P$, and spreading power over time bounds the sum by $n C_"wf"$.
+  Fano's inequality finishes the bound, and the rate statement follows as for one Gaussian channel.
+]
+
+#theorem("Capacity for a given decomposition", lean: "Meat.MIMO.SVD.closure_achievable_eq")[
+  If some index is active, $P >= 0$ and $N > 0$, then
+  $ overline({R >= 0 : R "achievable"}) = [0, C_"wf"]. $
+][
+  Achievability and the converse, as for one Gaussian channel.
+]
+
+#lemma("Existence of a singular value decomposition", lean: ("Meat.MIMO.isSymmetric_gram", "Meat.MIMO.exists_svd"))[
+  The map $H^* H$ is symmetric.
+  If $H != 0$, there is a singular value decomposition indexed by $[dim E]$ and $[dim F]$ with some active index, and each $v_j$ is an eigenvector of $H^* H$ with eigenvalue $sigma_j^2$.
+][
+  Let $(v_j)$ be an orthonormal eigenbasis of $H^* H$ with eigenvalues $lambda_j$.
+  Then $chevron.l H v_j, H v_k chevron.r = lambda_k [j = k]$, so $lambda_j = norm(H v_j)^2 >= 0$; put $sigma_j := sqrt(lambda_j)$.
+  The vectors $sigma_j^(-1) H v_j$ for active $j$ are orthonormal, so there are at most $dim F$ of them.
+  Embed the active indices into $[dim F]$ and extend these vectors to an orthonormal basis $(u_i)$ of $F$.
+  For inactive $j$, $norm(H v_j)^2 = sigma_j^2 = 0$, so $H v_j = 0 = sigma_j u_(e(j))$ for any choice of $e(j)$.
+  Some index is active, since otherwise $H$ vanishes on a basis.
+]
+
+#theorem("Capacity of the MIMO Gaussian channel", lean: "Meat.MIMO.closure_achievable_eq")[
+  If $H != 0$, $P >= 0$ and $N > 0$, then there is a singular value decomposition with $H^* H v_j = sigma_j^2 v_j$ for all $j$, and
+  $ overline({R >= 0 : R "achievable"}) = [0, C_"wf"], quad C_"wf" = sum_(j: sigma_j > 0) 1/2 log(max(nu, N \/ sigma_j^2) \/ (N \/ sigma_j^2)), $
+  where $nu$ is the water level.
+  So the capacity is water filling over the squared singular values of $H$.
+][
+  Combine the existence of a decomposition with the capacity for a given decomposition.
+]
