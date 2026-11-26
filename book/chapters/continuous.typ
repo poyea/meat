@@ -830,7 +830,7 @@ The same quantizer $q$ gives the input law and reads the channel output.
 There are finitely many Gaussian channels in parallel, with noise variances $N_i > 0$ and a total power budget $P >= 0$.
 With powers $p_i$, the sum of the capacities is $sum_i C(p_i, N_i)$, where $C(p, N) = 1/2 log(1 + p \/ N)$.
 This section solves the optimization over the powers.
-The operational capacity of parallel Gaussian channels is not formalized.
+The operational capacity of parallel Gaussian channels is proved later in this chapter.
 
 #definition(
   "Rates, allocations and water levels",
@@ -901,7 +901,8 @@ The second item is the Karush-Kuhn-Tucker condition: the channels that get power
 #source("Meat.Continuous.GaussianMultiUser")
 
 This section has the regions of the Gaussian multiple access channel $Y = X_1 + X_2 + Z$ and of the degraded Gaussian broadcast channel $Y_j = X + Z_j$, the algebra of their corner points, and the maximum entropy bounds behind their converses.
-The operational capacity theorems for these channels are not formalized.
+The next section proves the operational capacity theorem of the multiple access channel.
+The operational theorem of the broadcast channel is not formalized.
 
 #lemma(
   "Capacity algebra",
@@ -956,6 +957,183 @@ The operational capacity theorems for these channels are not formalized.
 ][
   The Gaussian maximizes differential entropy for a given variance, and the variances of independent variables add.
   These are the steps that bound $I((X_1, X_2); Y)$ in the converse for the multiple access channel and $I(X; Y_2)$ in the converse for the broadcast channel.
+]
+
+
+== The Gaussian multiple access channel
+#source("Meat.Continuous.GaussianMAC")
+
+The two-user Gaussian multiple access channel maps inputs $x_1, x_2 in RR$ to $Y = x_1 + x_2 + Z$, with $Z ~ cal(N)(0, N)$ and $N > 0$, independent across channel uses.
+Each codeword of user $j$ must satisfy the power constraint $P_j$.
+
+#definition(
+  "Codes and achievable pairs",
+  lean: (
+    "Meat.GaussianMAC.Code",
+    "Meat.GaussianMAC.Code.errorProb",
+    "Meat.GaussianMAC.Code.avgError",
+    "Meat.GaussianMAC.Achievable",
+  ),
+)[
+  A code of length $n$ with $k_1$ and $k_2$ messages and powers $P_1, P_2$ is a triple $(f_1, f_2, g)$.
+  The encoder $f_j : [k_j] -> RR^n$ satisfies $sum_i f_j (m)_i^2 <= n P_j$ for every $m$.
+  The decoder $g : RR^n -> [k_1] times [k_2]$ is measurable.
+  The error probability of $(m_1, m_2)$ is
+  $ lambda_(m_1 m_2) := cal(N)(0, N)^(times.o n) ({z : g(f_1 (m_1) + f_2 (m_2) + z) != (m_1, m_2)}), $
+  and $overline(lambda) := (k_1 k_2)^(-1) sum lambda_(m_1 m_2)$.
+  A pair $(R_1, R_2)$ is achievable if for every $epsilon > 0$ there is $n_0$ such that for every $n >= n_0$ there are $k_j >= e^(n R_j)$ and a code of length $n$ with $overline(lambda) <= epsilon$.
+]
+
+#lemma(
+  "Swapping the users",
+  lean: (
+    "Meat.GaussianMAC.Code.swap",
+    "Meat.GaussianMAC.Code.errorProb_swap",
+    "Meat.GaussianMAC.Code.avgError_swap",
+    "Meat.GaussianMAC.Achievable.swap",
+  ),
+)[
+  Exchanging the encoders and the two components of the decoder gives a code for powers $(P_2, P_1)$ with the same error probabilities.
+  So $(R_1, R_2)$ is achievable for $(P_1, P_2)$ if and only if $(R_2, R_1)$ is achievable for $(P_2, P_1)$.
+][
+  Addition is commutative, and the sum over message pairs is invariant under the swap.
+]
+
+#lemma(
+  "A genie gives a single-user code",
+  lean: (
+    "Meat.GaussianMAC.Code.exists_awgnCode",
+    "Meat.GaussianMAC.Achievable.awgn₁",
+    "Meat.GaussianMAC.Achievable.awgn₂",
+  ),
+)[
+  If $k_2 > 0$, every code has an AWGN code for power $P_1$ with $k_1$ messages and average error at most $overline(lambda)$.
+  So if $(R_1, R_2)$ is achievable, then $R_1$ is achievable for the AWGN channel with power $P_1$, and $R_2$ for power $P_2$.
+][
+  Choose $m_2$ minimizing $sum_(m_1) lambda_(m_1 m_2)$, so $k_1^(-1) sum_(m_1) lambda_(m_1 m_2) <= overline(lambda)$.
+  Keep $f_1$ and decode $y$ by the first component of $g(y + f_2 (m_2))$.
+  An error of this decoder at $m_1$ is an error of $g$ at $(m_1, m_2)$.
+  The second claim follows by swapping the users.
+]
+
+#theorem("Converse for the sum rate", lean: "Meat.GaussianMAC.Code.one_sub_mul_log_le")[
+  If $N > 0$ and $k_1, k_2 > 0$, every code satisfies
+  $ (1 - overline(lambda)) (log k_1 + log k_2) <= n C(P_1 + P_2, N) + log 2. $
+][
+  Let $mu_j := k_j^(-1) sum_m f_j (m)$ and consider the single-user code with messages $(m_1, m_2)$, codewords $f_1 (m_1) - mu_1 + f_2 (m_2) - mu_2$ and decoder $y |-> g(y + mu_1 + mu_2)$.
+  It has the same error probabilities.
+  Its codewords may break the power constraint, but their average power is at most $n (P_1 + P_2)$.
+  Indeed, the cross term $sum_(m_1, m_2) chevron.l f_1 (m_1) - mu_1, f_2 (m_2) - mu_2 chevron.r$ vanishes, and centering does not increase the second moment.
+  The proof of the converse for one AWGN code uses only the average power, so it applies to this code with power $P_1 + P_2$.
+]
+
+#theorem(
+  "Converse",
+  lean: ("Meat.GaussianMAC.Achievable.add_le", "Meat.GaussianMAC.Achievable.mem_macRegion"),
+)[
+  Let $P_1, P_2 >= 0$ and $N > 0$.
+  If $(R_1, R_2)$ is achievable, then $R_1 + R_2 <= C(P_1 + P_2, N)$.
+  If also $R_1, R_2 >= 0$, then $(R_1, R_2)$ is in the Gaussian multiple access region.
+][
+  The sum bound follows from the previous theorem as the AWGN converse follows from the converse for one code: let $n -> infinity$ with $overline(lambda) <= epsilon$.
+  The single-rate bounds are the AWGN converse applied to the genie codes.
+]
+
+#source("Meat.Continuous.GaussianMACQuantization")
+
+The achievability proof quantizes both inputs as in the AWGN coding theorem.
+User $1$ sends the clipped levels of $L$ independent $cal(N)(0, theta_1)$ variables and user $2$ those of $cal(N)(0, theta_2)$ variables.
+The new ingredient is the information that the output carries about user $2$ when user $1$ is treated as noise.
+For this, the gain uses the Gaussian posterior for the noise variance $theta_1 + N$, evaluated at the quantized output.
+
+#lemma(
+  "Bound on the gain function",
+  lean: ("Meat.GaussianMAC.abs_log_letterRatio_le", "Meat.GaussianMAC.integrable_log_letterRatio"),
+)[
+  Let $theta > 0$, $N > 0$, and $u_n$ and $s$ as in the gain of one channel use.
+  For every $t$ and level $b$,
+  $ |log u_n (t, b)| <= |1/2 log(theta \/ s)| + n^2 / s + (1 / (2 theta) + 1 / s) t^2. $
+  So $x |-> log u_n (f(x), g(x))$ is integrable for every finite measure when $f$ and $g$ are measurable and $f^2$ is integrable.
+][
+  The level value $alpha b \/ n$ has absolute value at most $n$, so $(t - alpha b \/ n)^2 <= 2 t^2 + 2 n^2$.
+  Insert this in the formula for $log u_n$.
+]
+
+#definition("Gain with interference", lean: "Meat.GaussianMAC.tinGain")[
+  Let $u'_n$ be the function $u_n$ for the variances $theta_2$ and $theta_1 + N$.
+  For independent $T_1 ~ cal(N)(0, theta_1)$, $T_2 ~ cal(N)(0, theta_2)$ and $Z ~ cal(N)(0, N)$,
+  $ J'_n := bb(E) log u'_n (T_2, k_n (Q_n (T_1) + Q_n (T_2) + Z)). $
+]
+
+#theorem(
+  "The gain with interference tends to the capacity formula",
+  lean: ("Meat.GaussianMAC.tinGain_eq", "Meat.GaussianMAC.tendsto_tinGain"),
+)[
+  If $theta_1, theta_2, N > 0$, then $J'_n -> C(theta_2, theta_1 + N)$.
+][
+  As for one channel use, with $alpha := theta_2 \/ (theta_2 + theta_1 + N)$ and $s := theta_2 (theta_1 + N) \/ (theta_2 + theta_1 + N)$,
+  $ J'_n = 1/2 log (theta_2 / s) + 1/2 - 1 / (2 s) bb(E) (T_2 - alpha Q_n (Q_n (T_1) + Q_n (T_2) + Z))^2. $
+  The square is at most $4 T_1^2 + 16 T_2^2 + 4 Z^2 + 36$, so dominated convergence applies.
+  The limit is $bb(E) (T_2 - alpha (T_1 + T_2 + Z))^2 = (1 - alpha)^2 theta_2 + alpha^2 (theta_1 + N)$, since the cross terms have mean $0$.
+  The rest is the computation for one channel use with noise variance $theta_1 + N$.
+]
+
+#lemma("Clipping both users", lean: "Meat.GaussianMAC.integral_tinGain_ge")[
+  Let $theta_1, theta_2, N > 0$, $c > 0$, and let $beta_j$ be the probability that the unclipped block of user $j$ has power above $L P_j$.
+  The expectation over $T_1, T_2 ~$ i.i.d. Gaussian blocks and the noise of
+  $ sum_(l = 1)^L log u'_n (T_(2 l), k_n (x_1 (T_1)_l + x_2 (T_2)_l + Z_l)), $
+  where $x_j$ is the clipped block input of user $j$, is at least
+  $ L J'_n - L ((4 n c + 4 n^2)(beta_1 + beta_2) + 4 n theta_2 \/ c) / (2 s). $
+][
+  As for one user.
+  If neither block is clipped, the summands are i.i.d. with mean $J'_n$.
+  Otherwise, the difference of the logarithms is at most $(4 n |t| + 4 n^2) \/ (2 s)$, and $|t| <= c + t^2 \/ c$.
+]
+
+#source("Meat.Continuous.GaussianMACAchievability")
+
+#theorem("Reduction to a discrete channel", lean: "Meat.GaussianMAC.achievable_of_lt_blockChannel")[
+  Let $P_1, P_2, R_1, R_2 >= 0$, $L >= 1$, finite input alphabets with maps $a_j : A_j -> RR^L$ of power at most $L P_j$, and a measurable quantizer $q$ of $RR^L$ to a finite set.
+  Let $W$ be the discrete multiple access channel $(x_1, x_2) |-> q(a_1 (x_1) + a_2 (x_2) + Z)$ and let $p_1, p_2$ be input laws.
+  If $L R_1 < I(X_1; Y | X_2)$, $L R_2 < I(X_2; Y | X_1)$ and $L (R_1 + R_2) < I(X_1, X_2; Y)$, then $(R_1, R_2)$ is achievable.
+][
+  By the discrete theorem, $(L (R_1 + delta), L (R_2 + delta))$ is achievable for $W$ for a small $delta > 0$.
+  A code of length $m$ for $W$ gives a Gaussian code of length $n = m L + r$ with $r < L$: send $a_j$ blockwise, pad with zeros and quantize each block.
+  The error probabilities agree.
+  For large $m$, $n R_j <= m L (R_j + delta)$.
+]
+
+#theorem("Achievability", lean: "Meat.GaussianMAC.achievable_of_lt")[
+  Let $P_1, P_2, N > 0$ and $R_1, R_2 >= 0$ with $R_1 < C(P_1, N)$, $R_2 < C(P_2, N)$ and $R_1 + R_2 < C(P_1 + P_2, N)$.
+  Then $(R_1, R_2)$ is achievable.
+][
+  Choose $tau < 1$ such that the three inequalities hold for $theta_j := tau P_j$.
+  Use the block inputs of the AWGN coding theorem for both users, and the output quantizer
+  $ y |-> (k_n (y), (k_n (y - a_2 (x_2)))_(x_2), (k_n (y - a_1 (x_1)))_(x_1)). $
+  The extra components let the variational lower bound on information subtract the other user.
+  This gives $I(X_1; Y | X_2) = I(X_1; X_2, Y) >= $ the single-user expectation for user $1$, the same for user $2$, and $I(X_1, X_2; Y) >=$ the expectation of the clipping lemma plus the single-user expectation for user $1$.
+  For the last bound, the test function is the product of $u'_n$ at the first component and of the user-$1$ test function at the component indexed by the level of user $2$, which still integrates to $1$.
+  By the limits of $J_n$ and $J'_n$, and by Chebyshev's inequality for the clipping probabilities, the three informations exceed $L (C(theta_1, N) - 2 eta)$, $L (C(theta_2, N) - 2 eta)$ and $L (C(theta_1, N) + C(theta_2, theta_1 + N) - 4 eta)$ for suitable $n$, $c$ and $L$.
+  Since $C(theta_1, N) + C(theta_2, theta_1 + N) = C(theta_1 + theta_2, N)$, the reduction applies.
+]
+
+#lemma(
+  "One silent user",
+  lean: ("Meat.GaussianMAC.achievable_zero_left", "Meat.GaussianMAC.achievable_zero_right"),
+)[
+  If $P_1 >= 0$ and $R$ is achievable for the AWGN channel with power $P_2$, then $(0, R)$ is achievable.
+  Symmetrically for user $1$.
+][
+  User $1$ has one message and sends the zero codeword.
+]
+
+#theorem("Gaussian multiple access coding theorem", lean: "Meat.GaussianMAC.closure_achievable_eq")[
+  If $P_1, P_2 >= 0$ and $N > 0$, the closure of the set of achievable pairs $(R_1, R_2) >= 0$ is the Gaussian multiple access region.
+][
+  The region is closed and contains every achievable pair by the converse.
+  If $P_1 = 0$, the region is ${0} times [0, C(P_2, N)]$, and the AWGN coding theorem with the silent user lemma gives it.
+  The case $P_2 = 0$ is symmetric.
+  If $P_1, P_2 > 0$, then $C(P_j, N) > 0$, and for a point $R$ of the region and $eta > 0$ the point $(max(R_1 - eta \/ 2, 0), max(R_2 - eta \/ 2, 0))$ satisfies the strict inequalities of the achievability theorem.
 ]
 
 

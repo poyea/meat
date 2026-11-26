@@ -247,18 +247,60 @@ $U_j$ carries the part of message $j$ that both receivers decode.
   Under strong interference, the cross rate bound of each pentagon follows from the direct rate bound of the other.
 ]
 
-#theorem("Strong interference capacity, Costa and El Gamal")[
-  Under strong interference, $overline(cal(A)(W))$ is the set of pairs $(R_1, R_2) >= 0$ with
-  $ R_1 <= I(X_1; Y_1 given X_2, Q), quad R_2 <= I(X_2; Y_2 given X_1, Q), $
-  $ R_1 + R_2 <= min(I(X_1, X_2; Y_1 given Q), I(X_1, X_2; Y_2 given Q)) $
-  for some law $p(q) p(x_1 given q) p(x_2 given q)$.
+#source("Meat.Open.InterferenceStrongConverse")
+
+#definition(
+  "Time-shared strong interference region",
+  lean: ("Meat.IC.strongTimeSharingRegion", "Meat.IC.strongCapacityRegion"),
+)[
+  For a law $p_Q$ on $"Fin" k$ and input laws $p_1 (q)$, $p_2 (q)$, the region $cal(S)_Q (W)$ is the set of pairs $(R_1, R_2) >= 0$ with
+  $ R_1 <= sum_q p_Q (q) I(X_1; Y_1 given X_2), quad R_2 <= sum_q p_Q (q) I(X_2; Y_2 given X_1), $
+  $ R_1 + R_2 <= sum_q p_Q (q) I(X_1, X_2; Y_1), quad R_1 + R_2 <= sum_q p_Q (q) I(X_1, X_2; Y_2), $
+  where the terms with index $q$ are taken under $p_1 (q) times p_2 (q)$ and the marginal channels $W_1$, $W_2$.
+  The region $cal(C)_"s" (W)$ is the closure of the union of all $cal(S)_Q (W)$.
+  This is the region with $I(dot given Q)$ terms; the two sum bounds are averaged separately, so it can be strictly larger than $cal(S)(W)$.
+]
+
+#theorem(
+  "Strong interference converse, Costa and El Gamal",
+  lean: (
+    "Meat.IC.achievableRegion_subset_strongCapacityRegion",
+    "Meat.IC.closure_achievableRegion_subset_strongCapacityRegion",
+  ),
+)[
+  Under strong interference, $overline(cal(A)(W)) subset.eq cal(C)_"s" (W)$.
 ][
-  The single-letter condition implies $I(X_1^n; Y_1^n given X_2^n) <= I(X_1^n; Y_2^n given X_2^n)$ for product inputs, by a telescoping argument over the letters.
-  Then Fano's inequality gives the bounds with a uniform time-sharing variable $Q$.
-  Achievability of the region with $Q$ needs coded time sharing.
-  The region with $Q$ can be strictly larger than $cal(S)(W)$, because the two sum bounds are averaged separately.
-  So the inclusion $cal(S)(W) subset.eq overline(cal(A)(W))$ above is the part of this theorem that is in Lean.
-  Neither the converse nor coded time sharing is in Lean.
+  First, the single-letter condition with $p_1$ a point mass at $x_1$ says that for each $x_1$ the channel $x_2 |-> W(x_1, x_2)$ is more capable for receiver 1 than for receiver 2: $I(X_2; Y_2) <= I(X_2; Y_1)$ for every input law.
+  Take a code, uniform messages $M_1, M_2$, and the outputs $Y_1^n, Y_2^n$.
+  The Csiszár telescoping identity, applied to $(M_1, M_2)$ and to $M_1$, writes $I(M_2; Y_1^n given M_1) - I(M_2; Y_2^n given M_1)$ as a sum over $i$ of $I(M_2; Y_(1 i) given M_1, S_i) - I(M_2; Y_(2 i) given M_1, S_i)$ with $S_i = (Y_1^(i-1), Y_(2, i+1)^n)$.
+  Given $(M_1, S_i, M_2)$, the letter $Y_i$ has law $W(x_(1 i)(M_1), x_(2 i)(M_2))$, so each term is nonnegative by the more capable property.
+  Hence $I(M_2; Y_2^n given M_1) <= I(M_2; Y_1^n given M_1)$.
+  Fano's inequality at receiver 1, the independence of $M_1$ and $M_2$, and the letter bounds of the multiple access converse give $(1 - P_e) log k_1 <= sum_i I(X_(1 i); Y_(1 i) given X_(2 i)) + log 2$.
+  With the previous inequality they give $(1 - P_e)(log k_1 + log k_2) <= sum_i I(X_(1 i), X_(2 i); Y_(1 i)) + 2 log 2$.
+  The bounds at receiver 2 follow by exchanging the two users.
+  Dividing by $n$ puts the rate pair near $cal(S)_Q (W)$ with $Q$ uniform on the letters.
+]
+
+#source("Meat.Open.InterferenceStrongAchievability")
+
+#theorem(
+  "Strong interference capacity, Costa and El Gamal",
+  lean: (
+    "Meat.IC.strongTimeSharingRegion_subset_closure_achievableRegion",
+    "Meat.IC.strongCapacityRegion_subset_closure_achievableRegion",
+    "Meat.IC.closure_achievableRegion_eq_strongCapacityRegion",
+  ),
+)[
+  Under strong interference, $overline(cal(A)(W)) = cal(C)_"s" (W)$.
+][
+  Coded time sharing is done by a state channel.
+  The inputs are maps $f_1 : "Fin" k -> A_1$ and $f_2 : "Fin" k -> A_2$, a state $Q tilde p_Q$ is drawn at each use, the channel acts as $W(f_1 (Q), f_2 (Q))$, and both receivers also see $Q$.
+  With product input laws $times.big_q p_1 (q)$ and $times.big_q p_2 (q)$, each of the six quantities of the compound inner bound for the state channel is at least the $p_Q$-average of the corresponding quantity for $W$.
+  For example $I(F_1; Q, Y_1 given F_2) >= I(F_1; Y_1 given Q, F_2)$, and given $(Q, F_2) = (q, f_2)$ the channel from $F_1$ to $Y_1$ is $f_1 |-> W_1(f_1 (q), f_2 (q))$, whose mutual information is at least that of $W_1(dot, f_2 (q))$ with input $p_1 (q)$.
+  Strong interference bounds the cross terms by the direct ones, so the compound inner bound makes every point of $cal(S)_Q (W)$, shrunk by $delta$, achievable on the state channel.
+  A code for the state channel has average error equal to the $p_Q^n$-average of the errors of the codes for $W$ obtained by fixing the state sequence.
+  So some fixed state sequence gives a code for $W$ with no larger error and the same rates.
+  The converse gives the other inclusion.
 ]
 
 == Two-way channels
