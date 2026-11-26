@@ -45,6 +45,8 @@ import Meat.Channel.ErrorExponent
 import Meat.Channel.Feedback
 import Meat.Channel.Wiretap
 import Meat.Channel.WiretapAchievability
+import Meat.Channel.WiretapCK
+import Meat.Channel.WiretapCKAchievability
 import Meat.Channel.State
 import Meat.Channel.MultipleAccess
 import Meat.Channel.MultipleAccessAchievability
