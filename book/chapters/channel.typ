@@ -1325,6 +1325,294 @@ The converse also needs the memoryless structure of the coding measure, and achi
 ]
 
 
+== Compound channels
+#source("Meat.Channel.Compound")
+
+A compound channel is a finite family $(W_s)_(s in S)$ of DMCs with the same alphabets.
+The state $s$ is fixed for the whole block and known to nobody.
+A code must work for every $s$ at once.
+Blackwell, Breiman and Thomasian (1959) showed that the capacity is $max_p min_s I_(W_s)(p)$.
+The order matters: $max_p min_s$ can be smaller than $min_s max_p$, because one input law must serve all channels.
+
+#definition("Compound achievable rates and capacity", lean: ("Meat.Compound.Achievable", "Meat.Compound.capacity"))[
+  A rate $R$ is achievable for the family $W$ if for every $epsilon > 0$ there exists $N$ such that for every $n >= N$ some block code of length $n$ has at least $e^(n R)$ messages and average error at most $epsilon$ on every channel $W_s$.
+  The information capacity is
+  $ C(W) := sup_p min_(s in S) I_(W_s)(p). $
+]
+
+#lemma(
+  "Basic bounds on the compound capacity",
+  lean: ("Meat.Compound.capacity_nonneg", "Meat.Compound.iInf_inputMutualInfo_le_capacity"),
+)[
+  $C(W) >= 0$, and if $S$ is nonempty, $min_s I_(W_s)(p) <= C(W)$ for every input law $p$.
+][
+  Mutual information is nonnegative, and each $min_s I_(W_s)(p)$ is at most $log |A|$, so the supremum is bounded.
+]
+
+#lemma("One typical slice is small", lean: "Meat.sum_filter_jointlyTypicalSet_le")[
+  For a law $p$ of $(X, Y)$ and every fixed $y^n$,
+  $ sum_(x^n : (x^n, y^n) in T_epsilon^((n))(p)) p_X^n (x^n) <= e^(-n (I(X ; Y) - 3 epsilon)). $
+][
+  If no $x^n$ is jointly typical with $y^n$, the sum is $0$.
+  Otherwise $y^n$ is typical, so $p_Y^n (y^n) <= e^(-n (H(Y) - epsilon))$.
+  For each $x^n$ in the slice, $p_X^n (x^n) <= e^(-n (H(X) - epsilon))$ and $1 <= e^(n (H(X, Y) + epsilon)) p^n (x^n, y^n)$.
+  Sum over $x^n$: the sum of $p^n (x^n, y^n)$ over all $x^n$ is $p_Y^n (y^n)$.
+]
+
+#lemma("Cross term for a mismatched test", lean: "Meat.DMC.sum_iidProb_mul_iidProb_mul_sum_cross_le")[
+  Let $X^n$ and $X'^n$ be i.i.d. with law $q$, and let $Y^n$ be the output of $W$ for the input $X^n$.
+  For another channel $V$, the probability that $(X'^n, Y^n)$ is jointly typical for the law $q times V$ is at most $e^(-n (I_V (q) - 3 epsilon))$.
+][
+  $X'^n$ is independent of $Y^n$.
+  Condition on $Y^n = y^n$ and use the bound on one typical slice for the law $q times V$, whose $X$ marginal is $q$.
+  The bound does not depend on $y^n$, so the law of $Y^n$ does not matter.
+]
+
+#lemma("Concavity of mutual information in the input", lean: "Meat.DMC.sum_inputMutualInfo_le")[
+  For input laws $p_1, ..., p_k$ with $k >= 1$,
+  $ 1 / k sum_(q = 1)^k I_W (p_q) <= I_W (1 / k sum_(q = 1)^k p_q). $
+][
+  Write $I_W (p) = H(Y) - H(Y given X)$.
+  The term $H(Y given X)$ is linear in $p$.
+  The output law of the mixture is the mixture of the output laws, and entropy is concave on mixtures.
+]
+
+#theorem("Compound converse", lean: "Meat.Compound.le_capacity_of_achievable")[
+  If $S$ is finite and nonempty, every achievable rate is at most $C(W)$.
+][
+  Fix a code with error at most $epsilon$ on every channel, and let $p_i$ be the law of its $i$-th input under a uniform message.
+  These laws do not depend on $s$.
+  For each $s$, Fano's inequality and the memoryless bound give $(1 - epsilon) log |M| <= sum_i I_(W_s)(p_i) + log 2$.
+  By concavity, $sum_i I_(W_s)(p_i) <= n I_(W_s)(overline(p))$ with $overline(p) = 1 / n sum_i p_i$.
+  Take the $s$ that attains $min_s I_(W_s)(overline(p))$, which is at most $C(W)$.
+  Conclude as in the weak converse for one DMC.
+]
+
+#theorem(
+  "Compound achievability",
+  lean: ("Meat.Compound.achievable_of_lt_capacity", "Meat.Compound.achievable_zero"),
+)[
+  If $S$ is finite and nonempty and $A$ is nonempty, every rate $R < C(W)$ is achievable, and so is $R = 0$.
+][
+  Pick $q$ with $R < min_s I_(W_s)(q)$.
+  Draw a codebook i.i.d. from $q$.
+  The decoder looks for the unique message whose codeword is jointly typical with $y^n$ for some law $q times W_s$, that is, it tests against the union of the typical sets over $s$.
+  On the channel $W_s$, the true codeword fails the test with probability at most $1 - P(T_s)$, because $T_s$ is in the union.
+  A wrong codeword passes the test for $s'$ with probability at most $e^(-n (I_(W_(s')) (q) - 3 epsilon))$, by the cross-term bound.
+  Sum the expected average errors over the finitely many $s$; the total tends to $0$, so one codebook is good for every $s$ at once.
+]
+
+#theorem("Compound channel coding theorem", lean: "Meat.Compound.closure_achievable_eq")[
+  If $S$ is finite and nonempty and $A$ is nonempty, the closure of the set of achievable rates $R >= 0$ is $[0, C(W)]$.
+][
+  The converse puts the set inside $[0, C(W)]$, which is closed.
+  If $C(W) = 0$, the rate $0$ is achievable.
+  Otherwise $[0, C(W))$ is inside the set by achievability, and its closure is $[0, C(W)]$.
+]
+
+
+== Channels with i.i.d. state
+#source("Meat.Channel.StateIid")
+
+This section keeps the model of the previous section: $W(y given x, s)$ with i.i.d. states of law $p_S$.
+It changes who sees the state.
+In each case the problem reduces to the point-to-point coding theorem on a suitable DMC.
+
+#definition(
+  "Derived channels",
+  lean: (
+    "Meat.StateIid.avgChannel",
+    "Meat.StateIid.rxChannel",
+    "Meat.StateIid.lift",
+    "Meat.StateIid.bothChannel",
+    "Meat.StateIid.avgChannel_apply",
+    "Meat.StateIid.rxChannel_apply",
+  ),
+)[
+  The averaged channel is $overline(W)(y given x) := sum_s p_S (s) W(y given x, s)$.
+  The channel with state output is $W_R ((y, s) given x) := p_S (s) W(y given x, s)$: the receiver sees the state next to the output.
+  The lift of $W$ to Shannon strategies $t : S -> A$ is $W(y given t(s), s)$, and the strategy channel with state output is $W_B ((y, s) given t) := p_S (s) W(y given t(s), s)$.
+]
+
+=== State known to nobody
+
+#definition(
+  "Codes that ignore the state",
+  lean: ("Meat.StateIid.uninformed", "Meat.StateIid.UninformedAchievable"),
+)[
+  A block code $(f, g)$ gives a state code whose encoder ignores the state.
+  A rate is achievable without state information if such codes reach it, with the error of the state model.
+]
+
+#lemma(
+  "The error is the error on the averaged channel",
+  lean: ("Meat.StateIid.avgError_uninformed", "Meat.StateIid.uninformedAchievable_iff"),
+)[
+  For a block code $c$, the state-model error of $c$ equals its error on $overline(W)$.
+  So a rate is achievable without state information if and only if it is achievable on $overline(W)$.
+][
+  For fixed $m$ and $y^n$, sum over $s^n$: $sum_(s^n) product_i p_S (s_i) W(y_i given x_i, s_i) = product_i overline(W)(y_i given x_i)$, by expanding the product of sums.
+]
+
+#theorem("Capacity with the state known to nobody", lean: "Meat.StateIid.closure_uninformedAchievable_eq")[
+  If $A$ is nonempty, the closure of the achievable rates $R >= 0$ is $[0, C(overline(W))]$.
+][
+  The previous lemma and the channel coding theorem for $overline(W)$.
+]
+
+=== State known at the receiver
+
+#definition(
+  "Codes with state at the receiver",
+  lean: (
+    "Meat.StateIid.ReceiverCode",
+    "Meat.StateIid.ReceiverCode.avgError",
+    "Meat.StateIid.ReceiverCode.toBlockCode",
+    "Meat.StateIid.ReceiverCode.ofBlockCode",
+    "Meat.StateIid.ReceiverAchievable",
+  ),
+)[
+  A code is an encoder $f : M -> A^n$ and a decoder $g : B^n times S^n -> M$.
+  Its error is
+  $ P_e := 1 / |M| sum_m sum_(s^n) sum_(y^n : g(y^n, s^n) != m) product_i p_S (s_i) W(y_i given f(m)_i, s_i). $
+  Such a code is the same thing as a block code for $W_R$: pair the outputs with the states.
+]
+
+#lemma(
+  "Reduction to the channel with state output",
+  lean: ("Meat.StateIid.ReceiverCode.avgError_toBlockCode", "Meat.StateIid.receiverAchievable_iff"),
+)[
+  The error of a receiver code equals the error of the matching block code on $W_R$.
+  So a rate is achievable with state at the receiver if and only if it is achievable on $W_R$.
+][
+  The map $z^n |-> (y^n, s^n)$ that splits a sequence of pairs is a bijection, and the block probability of $W_R$ is the product of $p_S (s_i) W(y_i given x_i, s_i)$.
+]
+
+#lemma(
+  "Information of the channels with state output",
+  lean: (
+    "Meat.StateIid.inputMutualInfo_rxChannel",
+    "Meat.StateIid.inputMutualInfo_comp",
+    "Meat.StateIid.inputMutualInfo_bothChannel",
+  ),
+)[
+  For an input law $p$,
+  $ I_(W_R)(p) = sum_s p_S (s) I_(W(dot given dot, s))(p) = I(X ; Y given S). $
+  For a map $f : A' -> A$, the channel $W compose f$ with input law $p$ has the information of $W$ with input law $f_* p$.
+  So for a law $p$ on strategies, $I_(W_B)(p) = sum_s p_S (s) I_(W(dot given dot, s))(p_s)$, where $p_s$ is the law of $T(s)$.
+][
+  Use $I_W (p) = sum_(a, b) p(a) W(b given a) log W(b given a) - sum_b q(b) log q(b)$ with $q$ the output law.
+  For $W_R$ the output law at $(y, s)$ is $p_S (s) q_s (y)$, and $u v log(u v) = v (u log u) + u (v log v)$.
+  The terms with $p_S (s) log p_S (s)$ cancel, because $W(dot given x, s)$ and $q_s$ sum to $1$.
+  For $W compose f$, sum over the fibres of $f$.
+]
+
+#theorem("Capacity with the state at the receiver", lean: "Meat.StateIid.closure_receiverAchievable_eq")[
+  If $A$ is nonempty, the closure of the achievable rates $R >= 0$ is $[0, C]$ with
+  $ C = sup_p sum_s p_S (s) I_(W(dot given dot, s))(p) = max_p I(X ; Y given S). $
+][
+  The reduction to $W_R$, the channel coding theorem for $W_R$, and the formula for $I_(W_R)$.
+]
+
+=== State known at both ends
+
+#definition(
+  "Codes with state at both ends",
+  lean: (
+    "Meat.StateIid.BothCode",
+    "Meat.StateIid.BothCode.avgError",
+    "Meat.StateIid.BothCode.toFeedbackCode",
+    "Meat.StateIid.BothCode.ofBlockCode",
+    "Meat.StateIid.BothAchievable",
+  ),
+)[
+  The encoder sees the state causally: $x_i = f_i (m, s^(i - 1), s_i)$.
+  The decoder sees $(y^n, s^n)$.
+  The partial map $s |-> f_i (m, s^(i - 1), s)$ is a strategy that depends on $m$ and on the past states.
+  The past states are part of the past outputs of $W_B$, so the code is a feedback code for $W_B$.
+  A block code for $W_B$ gives a code that ignores the past states.
+]
+
+#lemma("Reduction to a feedback code", lean: "Meat.StateIid.BothCode.avgError_toFeedbackCode")[
+  The error of a code with state at both ends equals the error of the matching feedback code on $W_B$.
+][
+  The probability of $(y^n, s^n)$ under the feedback code is $product_i p_S (s_i) W(y_i given f_i (m, s^(i - 1), s_i), s_i)$.
+  Split sequences of pairs as for receiver codes.
+]
+
+#theorem(
+  "Capacity with the state at both ends",
+  lean: ("Meat.StateIid.capacity_bothChannel", "Meat.StateIid.closure_bothAchievable_eq"),
+)[
+  If $A$ is nonempty,
+  $ C(W_B) = sum_s p_S (s) C(W(dot given dot, s)), $
+  and the closure of the achievable rates $R >= 0$ is $[0, C(W_B)]$.
+  Equivalently, $C = max_(p(x given s)) I(X ; Y given S)$.
+][
+  Converse: a code is a feedback code for $W_B$, and feedback does not increase capacity.
+  Achievability: block codes for $W_B$ are codes with state at both ends.
+  For the formula, $I_(W_B)(p)$ depends on $p$ only through the marginals $p_s$, and each term is at most $C(W(dot given dot, s))$.
+  Conversely, for $delta > 0$ pick $q_s$ within $delta / 2$ of $C(W(dot given dot, s))$, and take the product law of strategies, whose marginals are the $q_s$.
+]
+
+The encoder here sees the state causally.
+With noncausal state at the encoder and the state at the decoder, the capacity is the same, but the converse needs a different argument, which is not in Lean.
+
+
+== Causal state at the encoder: Shannon strategies
+#source("Meat.Channel.ShannonStrategy")
+
+Now the encoder sees the state causally and the decoder does not see it.
+Shannon (1958) showed that the capacity is the capacity of the DMC whose inputs are strategies $t : S -> A$.
+
+#definition("Strategy channel", lean: "Meat.ShannonStrategy.strategyChannel")[
+  The strategy channel is $W_T (y given t) := sum_s p_S (s) W(y given t(s), s)$, the averaged channel of the lift of $W$ to strategies.
+]
+
+#definition(
+  "Causal codes",
+  lean: (
+    "Meat.ShannonStrategy.CausalCode",
+    "Meat.ShannonStrategy.CausalCode.avgError",
+    "Meat.ShannonStrategy.CausalCode.toBothCode",
+    "Meat.ShannonStrategy.CausalCode.avgError_toBothCode",
+    "Meat.ShannonStrategy.CausalAchievable",
+  ),
+)[
+  A causal code has encoders $x_i = f_i (m, s^(i - 1), s_i)$ and a decoder $g : B^n -> M$.
+  Its error is
+  $ P_e := 1 / |M| sum_m sum_(s^n) sum_(y^n : g(y^n) != m) product_i p_S (s_i) W(y_i given f_i (m, s^(i - 1), s_i), s_i). $
+  It is a code with state at both ends whose decoder ignores the state, with the same error.
+]
+
+#lemma(
+  "Block codes on strategies",
+  lean: ("Meat.ShannonStrategy.CausalCode.ofBlockCode", "Meat.ShannonStrategy.CausalCode.avgError_ofBlockCode"),
+)[
+  A block code for $W_T$ is a causal code that applies the strategy $t_i = f(m)_i$ to the current state only, and its error is the same.
+][
+  For fixed $m$ and $y^n$, the sum over $s^n$ of $product_i p_S (s_i) W(y_i given t_i (s_i), s_i)$ is $product_i W_T (y_i given t_i)$.
+]
+
+#theorem("Converse with causal state", lean: "Meat.ShannonStrategy.le_capacity_of_causalAchievable")[
+  Every rate achievable with causal codes is at most $C(W_T)$.
+][
+  View the code as a feedback code for $W_B$, the strategy channel with state output, whose decoder sees only the $B$ part.
+  The interactive converse with the output map $(y, s) |-> y$ gives $(1 - P_e) log |M| <= sum_i (H(Y_i) - H(Y_i given T_i)) + log 2$, where $T_i$ is the strategy at time $i$.
+  The key step is $H(Y_i given M, Y^(i - 1)) >= H(Y_i given M, Y^(i - 1), S^(i - 1)) = H(Y_i given T_i)$.
+  The map $(t, (y, s)) |-> (t, y)$ sends the joint law for $W_B$ to the joint law for $W_T$, so each term is $I_(W_T)(p_i) <= C(W_T)$.
+  Conclude as in the weak converse.
+]
+
+#theorem("Shannon's theorem for causal state", lean: "Meat.ShannonStrategy.closure_causalAchievable_eq")[
+  If $A$ is nonempty, the closure of the rates $R >= 0$ achievable with causal codes is $[0, C(W_T)]$, with
+  $ C(W_T) = max_(p(t)) I(T ; Y). $
+][
+  The converse puts the set inside $[0, C(W_T)]$.
+  Block codes for $W_T$ are causal codes with the same error, so the set contains the achievable rates of $W_T$, whose closure is $[0, C(W_T)]$.
+]
+
+
 == Strong converse
 #source("Meat.Channel.StrongConverse")
 
