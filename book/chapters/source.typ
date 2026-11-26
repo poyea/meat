@@ -1125,8 +1125,7 @@ Whether the boundary pair $(R(D), D)$ itself is achievable is not decided here, 
 The encoder sees a source $X$, and the decoder also sees correlated side information $Y$.
 The decoder reconstructs $X$ within a distortion $D$.
 In this section, $p$ is a law on $S times T$, $V$ is the reconstruction alphabet and $d : S times V -> RR$ is a distortion measure.
-This section proves the converse of Wyner and Ziv (1976).
-The achievability part, by binning and covering, is not yet in Lean.
+This section proves the converse of Wyner and Ziv (1976), and the next section proves achievability by binning and covering.
 
 #definition("Wyner-Ziv code", lean: ("Meat.WZCode", "Meat.WZCode.distortion"))[
   A Wyner-Ziv code of length $n$ with $k$ indices is a pair of maps $f : S^n -> [k]$ and $g : [k] times T^n -> V^n$.
@@ -1184,3 +1183,132 @@ The achievability part, by binning and covering, is not yet in Lean.
   Then $k >= 1$ and $log k \/ n <= R$.
   Apply the converse for one code and monotonicity, then let $delta -> 0$.
 ]
+
+
+=== Wyner-Ziv achievability
+#source("Meat.Source.WynerZivEncoder")
+
+The direct part uses a random codebook of $K$ sequences drawn i.i.d. from $q_U^n$, a uniform random binning of the codebook into $k$ bins, and strong typicality.
+The first lemmas average the error events over the codebook and the binning.
+
+#lemma("Atypical sources", lean: "Meat.sum_iidProb_not_mem_strongTypicalSet_le")[
+  For a law $q$ on $S$, $eta > 0$ and $n >= 1$,
+  $ P_(q^n) (X^n in.not T_eta^((n)) (q)) <= |S| \/ (4 n eta^2). $
+][
+  Pair each letter with a constant and apply the Chebyshev bound for conditional typicality to the trivial input sequence.
+]
+
+#lemma(
+  "Codebook averages",
+  lean: ("Meat.sum_codebook_not_mem", "Meat.sum_codebook_apply_mem"),
+)[
+  Let $C(1), dots, C(K)$ be i.i.d. with law $q^n$, and let $A$ be a set of sequences.
+  Then $P(C(l) in.not A "for all" l) = (1 - q^n (A))^K$, and $P(C(l) in A) = q^n (A)$ for each $l$.
+][
+  The weight of a codebook is a product over its entries, so both sums factor over $l$.
+]
+
+#lemma("Bin collisions", lean: "Meat.sum_bins_le")[
+  Let $beta : [K] -> [k]$ be uniform, $L in [K]$ fixed, and $A subset.eq [K]$.
+  Then
+  $ P(exists l != L, beta(l) = beta(L), l in A) <= |A| \/ k. $
+][
+  Bound the indicator of the union by the sum of the indicators.
+  For $l != L$, the event $beta(l) = beta(L)$ has probability $1 \/ k$.
+]
+
+#source("Meat.Source.WynerZivAchievability")
+
+Let $q$ be a law of $(X, Y, U)$ on $S times T times [m]$ with $U -> X -> Y$.
+Write $q_(X U)$ and $q_(Y U)$ for its marginals on $S times [m]$ and $T times [m]$.
+
+#lemma(
+  "Strong typicality: monotonicity, swap and marginal",
+  lean: (
+    "Meat.WynerZiv.strongTypicalSet_mono",
+    "Meat.WynerZiv.mem_strongTypicalSet_swap",
+    "Meat.WynerZiv.mem_strongTypicalSet_marginal",
+  ),
+)[
+  The set $T_epsilon^((n)) (r)$ grows with $epsilon$.
+  A pair sequence is typical if and only if the swapped sequence is typical for the swapped law.
+  If $((u, x), y)$ is $epsilon$-typical for $r$, then $(y, u)$ is $|A| epsilon$-typical for the marginal $sum_a r((u, a), y)$.
+][
+  The counts of the swapped sequence are the same.
+  A marginal count is a sum of $|A|$ joint counts, so the deviations add up.
+]
+
+#definition(
+  "Marginals and the test channel",
+  lean: ("Meat.WynerZiv.lawXU", "Meat.WynerZiv.lawYU", "Meat.WynerZiv.condChannel"),
+)[
+  $q_(X U) (x, u) := sum_y q(x, y, u)$ and $q_(Y U) (y, u) := sum_x q(x, y, u)$.
+  The channel $W(y given x)$ is the conditional law of $Y$ given $X = x$, and a fixed point mass where $P(X = x) = 0$.
+]
+
+#lemma("Marginal of the pair", lean: "Meat.WynerZiv.toReal_map_pair")[
+  The law of $(X, Y)$ under $q$ is $p(x, y) = sum_u q(x, y, u)$.
+][
+  Sum the push-forward over the fibres.
+]
+
+#lemma(
+  "Information quantities as sums",
+  lean: (
+    "Meat.WynerZiv.mutualInfo_eq_jointInfo",
+    "Meat.WynerZiv.condMutualInfo_eq_jointInfo_sub",
+    "Meat.WynerZiv.jointInfo_lawXU_nonneg",
+  ),
+)[
+  $I(X ; U) = I(q_(X U)) >= 0$, and if $U -> X -> Y$, then
+  $ I(X ; U given Y) = I(q_(X U)) - I(q_(Y U)). $
+][
+  Write each entropy as a sum over the marginal, and use $I(U ; Y given X) = 0$ for the Markov chain.
+]
+
+#theorem("Wyner-Ziv achievability", lean: "Meat.WynerZiv.achievable_of_lt")[
+  Let $d >= 0$, let $q$ satisfy $U -> X -> Y$, and let $phi : [m] times T -> V$.
+  If $I(X ; U given Y) < R$, then $(R, EE d(X, phi(U, Y)))$ is achievable for the source $p$, the law of $(X, Y)$.
+][
+  Set $delta' := (R - I(X ; U given Y)) \/ 4$.
+  The packing lemma for $q_(Y U)$ with $delta'$ gives a level $epsilon_p$.
+  Choose $delta <= delta'$ small enough that $2 |S| delta <= epsilon_p$ and $2 delta sum |d| <= epsilon \/ 2$.
+  The covering lemma for $q_(X U)$ with $delta$ gives a level $epsilon_c$.
+  Take $K := floor(e^(n (I(X ; U) + 2 delta')))$ codewords and $k := floor(e^(n R))$ bins.
+  The encoder sends the bin of the first codeword $u(L)$ that is $delta$-typical with $x$.
+  The decoder picks a codeword in the received bin that is $epsilon_p$-typical with $y$ and outputs $phi(u_i, y_i)$ letter by letter.
+  If $x$ is covered, $(u(L), x, y)$ is $2 delta$-typical, and no other codeword of the bin is typical with $y$, then the decoder finds $u(L)$.
+  The joint typicality bounds the distortion by $EE d + 2 delta sum |d|$.
+  Otherwise the distortion is at most $M := sum_(u, x, y) d(x, phi(u, y))$.
+  Averaged over the codebook, the binning and the source, the three error events have probability at most:
+  - $e^(-K e^(-n (I(X ; U) + delta))) + |S| \/ (4 n epsilon_c^2)$, by the covering lemma for typical $x$ and the atypical source bound otherwise;
+  - $|[m] times S| |T| \/ (4 n delta^2)$, by the Markov lemma with the test channel $W$;
+  - $K e^(-n (I(Y ; U) - delta')) \/ k$, by the bin collision bound and the packing lemma.
+  Since $I(X ; U) - I(Y ; U) = I(X ; U given Y)$, the last term is at most $2 e^(-n delta')$.
+  All three tend to $0$, so for large $n$ some codebook and binning have distortion at most $EE d + epsilon$.
+]
+
+#source("Meat.Source.WynerZivTheorem")
+
+#lemma("Monotonicity of achievability", lean: "Meat.WynerZiv.Achievable.mono")[
+  If $(R, D)$ is achievable, $R <= R'$ and $D <= D'$, then $(R', D')$ is achievable.
+][
+  The same codes work.
+]
+
+#lemma("Points of the region", lean: "Meat.WynerZiv.achievable_of_mem_rateRegion")[
+  Let $d >= 0$.
+  If $(R, D)$ is in the Wyner-Ziv region and $R < R'$, then $(R', D)$ is achievable.
+][
+  Apply achievability to the law that witnesses $(R, D)$, then monotonicity in $D$.
+]
+
+#theorem("Wyner-Ziv theorem", lean: "Meat.WynerZiv.closure_achievableRegion_eq")[
+  Let $d >= 0$.
+  The closure of the achievable region equals the closure of the Wyner-Ziv region.
+][
+  The converse gives one inclusion.
+  For a point $(R, D)$ of the region, $(R + delta, D)$ is achievable for every $delta > 0$, and these points tend to $(R, D)$.
+]
+
+The region is not shown to be closed here, because that needs a bound on the size of $U$.

@@ -231,6 +231,41 @@ $U_j$ carries the part of message $j$ that both receivers decode.
   Time sharing gives the closed convex hull.
 ]
 
+#source("Meat.Open.InterferenceNoise")
+
+#definition(
+  "Treating interference as noise",
+  lean: (
+    "Meat.IC.noiseChannel₁",
+    "Meat.IC.noiseChannel₂",
+    "Meat.IC.noiseRegion",
+    "Meat.IC.timeDivisionRegion",
+  ),
+)[
+  For input laws $p_1, p_2$, the channel seen by receiver 1 when sender 2 transmits i.i.d. $p_2$ noise is $V_1 (y_1 given x_1) = sum_(x_2) p_2 (x_2) W_1 (y_1 given x_1, x_2)$, and $V_2$ is defined in the same way.
+  The region $cal(N)(W, p_1, p_2)$ is the set of pairs $(R_1, R_2) >= 0$ with $R_1 <= I(X_1; Y_1)$ and $R_2 <= I(X_2; Y_2)$ under $p_1 times p_2$.
+  The region $cal(T)(W)$ is the closed convex hull of the union of all $cal(N)(W, p_1, p_2)$.
+  It contains time division: with $p_2$ a point mass, $cal(N)$ gives $R_1 <= I(X_1; Y_1 given X_2 = x_2)$ and $R_2 = 0$, and time sharing mixes such points.
+]
+
+#theorem(
+  "Treating interference as noise",
+  lean: (
+    "Meat.IC.achievable_of_lt_noise",
+    "Meat.IC.noiseRegion_subset_closure_achievableRegion",
+    "Meat.IC.timeDivisionRegion_subset_closure_achievableRegion",
+  ),
+)[
+  If $R_1 < I(X_1; Y_1)$ and $R_2 < I(X_2; Y_2)$ under $p_1 times p_2$, then $(R_1, R_2)$ is achievable.
+  So $cal(T)(W) subset.eq overline(cal(A)(W))$.
+][
+  Draw independent codebooks with letters i.i.d. $p_1$ and $p_2$, and let each receiver use the point-to-point joint typicality decoder for its own codebook and the channel $V_1$ or $V_2$.
+  The error of the interference code is at most the sum of the two receivers' errors.
+  For a fixed codebook of user 1, averaging receiver 1's error over the i.i.d. codebook of user 2 gives exactly the error of the point-to-point code on $V_1$, because the codeword of user 2 is an i.i.d. $p_2$ sequence and $W$ is memoryless.
+  The random coding bound of the channel coding theorem then bounds the expected error at each receiver.
+  So one pair of codebooks has small average error, and time sharing gives the closed convex hull.
+]
+
 #theorem(
   "Strong interference achievability, Sato and Costa-El Gamal",
   lean: (

@@ -1265,7 +1265,7 @@ The states are i.i.d. with law $p_S$, and the encoder knows the whole state sequ
 The decoder does not see the state.
 Gelfand and Pinsker (1980) showed that the capacity is the largest value of $I(U ; Y) - I(U ; S)$ over auxiliary variables $U$.
 This section states the model and the capacity formula, and proves the Csiszár sum identity, which is the key step of the converse.
-The coding theorem itself is not yet in Lean.
+The next sections prove the coding theorem.
 
 #definition("Code for a channel with state", lean: ("Meat.StateCode", "Meat.StateCode.avgError"))[
   A code of length $n$ with message set $M$ is a pair of maps $f : M times S^n -> A^n$ and $g : B^n -> M$.
@@ -1293,7 +1293,6 @@ The coding theorem itself is not yet in Lean.
 ]
 
 The Gelfand-Pinsker theorem says that the capacity equals $C_"GP"$.
-In Lean, neither direction is proved yet.
 The converse also needs the memoryless structure of the coding measure, and achievability needs covering inside bins and joint typicality decoding.
 
 #lemma(
@@ -1322,6 +1321,90 @@ The converse also needs the memoryless structure of the coding measure, and achi
   This gives $sum_(i < j) I(S_j ; Y_i given Y^(i - 1), V, S_(j + 1)^n)$.
   The two summands for a pair $i < j$ are equal by symmetry of conditional mutual information and a relabeling of the condition.
   Exchange the order of the double sum.
+]
+
+
+=== The Gelfand-Pinsker converse
+#source("Meat.Channel.GelfandPinskerConverse")
+
+The converse bounds $I(M ; Y^n)$ by a sum of single-letter terms with the auxiliary variables $U_i := (M, S_(i + 1)^n, Y^(i - 1))$.
+
+#lemma("Gelfand-Pinsker single-letterization", lean: "Meat.GelfandPinsker.mutualInfo_le_sum_sub")[
+  Let $M$ be a random variable and $S^n$, $Y^n$ random sequences such that $I(S_i ; M, S_(i + 1)^n) = 0$ for every $i$.
+  With $U_i := ((M, S_(i + 1)^n), Y^(i - 1))$,
+  $ I(M ; Y^n) <= sum_(i = 1)^n (I(U_i ; Y_i) - I(U_i ; S_i)). $
+][
+  By the chain rule, $I(M ; Y^n) = sum_i I(M ; Y_i given Y^(i - 1))$.
+  Each term equals $I(U_i ; Y_i) - I(Y^(i - 1) ; Y_i) - I(S_(i + 1)^n ; Y_i given M, Y^(i - 1))$, and the middle term is nonnegative.
+  By the Csiszár sum identity, the sum of the last terms equals $sum_i I(Y^(i - 1) ; S_i given M, S_(i + 1)^n)$.
+  By the chain rule and the hypothesis, this term equals $I(U_i ; S_i)$.
+]
+
+#lemma(
+  "Bounds on the Gelfand-Pinsker formula",
+  lean: ("Meat.GelfandPinsker.le_infoCapacity", "Meat.GelfandPinsker.infoCapacity_nonneg"),
+)[
+  Every value $I(U ; Y) - I(U ; S)$ in the definition of $C_"GP"$ is at most $C_"GP"$, and $C_"GP" >= 0$ when $A$ is nonempty.
+][
+  Each value is at most $H(Y) <= log |B|$, so the set is bounded above.
+  A constant $U$ in $[1]$ gives the value $0$.
+]
+
+#lemma("Kernel form of the formula", lean: "Meat.GelfandPinsker.le_infoCapacity_of_kernel")[
+  Let $S$, $U$, $X$ and $Y$ be random variables on a probability space, with $S$ of law $p_S$, $U$ in $[m]$, and
+  $ P(S = s, U = u, X = x, Y = y) = P(S = s, U = u, X = x) W(y given x, s). $
+  Then $I(U ; Y) - I(U ; S) <= C_"GP"$.
+][
+  Let $q$ be the law of $(S, U, X)$.
+  Its first marginal is $p_S$, and the law of $((S, U, X), Y)$ is the joint law built from $q$ and $W$.
+  So the two mutual informations are the ones in the definition of $C_"GP"$.
+]
+
+#theorem("Gelfand-Pinsker converse", lean: "Meat.GelfandPinsker.le_infoCapacity_of_achievable")[
+  If $A$ is nonempty and $R$ is achievable, then $R <= C_"GP"$.
+][
+  Take the uniform message $M$, the i.i.d. state $S^n$ and the output $Y^n$ of a code.
+  The state is independent of the message, so $I(S_i ; M, S_(i + 1)^n) = 0$, and the single-letterization applies.
+  For each $i$, $Y_i$ given $(M, S^n, Y_(-i))$ has law $W(dot given X_i, S_i)$, with $X_i$ the $i$-th input.
+  Since $U_i$, $S_i$ and $X_i$ are functions of $(M, S^n, Y_(-i))$, the kernel form gives $I(U_i ; Y_i) - I(U_i ; S_i) <= C_"GP"$, after relabeling $U_i$ into a finite set $[m]$.
+  Fano's inequality gives $(1 - P_e) log |M| <= n C_"GP" + log 2$, and the rate bound follows as for the DMC.
+]
+
+=== Gelfand-Pinsker achievability
+#source("Meat.Channel.GelfandPinskerAchievability")
+
+#lemma("A zero rate is achievable", lean: "Meat.GelfandPinsker.achievable_zero")[
+  If $A$ is nonempty, the rate $0$ is achievable.
+][
+  A code with one message has error probability $0$.
+]
+
+#theorem("Gelfand-Pinsker achievability", lean: "Meat.GelfandPinsker.achievable_of_lt_infoCapacity")[
+  If $A$ is finite and nonempty and $R < C_"GP"$, then $R$ is achievable.
+][
+  For $R < 0$ use the zero rate.
+  Otherwise pick $q$ with $R < I(U ; Y) - I(U ; S)$.
+  Let $V(y given s, u) := sum_x q(x given s, u) W(y given x, s)$ be the channel from $(S, U)$ to $Y$.
+  Then $(S, U, Y)$ has the same law under $V$ as under $q$ and $W$.
+  Multicoding: for each message $m$, draw $L approx e^(n (I(U ; S) + 2 delta))$ codewords $u(m, l)$ i.i.d. from $q_U$.
+  Given the state $s^n$, the encoder sends a codeword $u(m, l)$ that is strongly typical with $s^n$, and the decoder looks for a message $hat(m)$ with $(y^n, u(hat(m), l))$ strongly typical for some $l$.
+  The average error over the random codebook is at most the sum of four terms.
+  The state is atypical with probability $O(1 / n)$ by Chebyshev.
+  For a typical state, the strong covering lemma gives a covering codeword with probability at least $1 - e^(-e^(n delta))$.
+  Given a covering codeword, the output is jointly typical with it except with probability $O(1 / n)$, by the conditional typicality lemma.
+  A codeword of another message is independent of $y^n$, so by the strong packing lemma all such codewords give at most $|M| L e^(-n (I(U ; Y) - delta')) -> 0$.
+  Some codebook does as well as the average.
+  Finally the encoder must send a deterministic $x^n$: for each message and state choose the $x^n$ that minimizes the error, which is at most the error of $x^n$ drawn from $q(x given s, u)$, that is the error over $V$.
+]
+
+=== The Gelfand-Pinsker theorem
+#source("Meat.Channel.GelfandPinsker")
+
+#theorem("Gelfand-Pinsker", lean: "Meat.GelfandPinsker.closure_achievable_eq")[
+  If $A$ is finite and nonempty, the closure of the set of nonnegative achievable rates is $[0, C_"GP"]$.
+][
+  The converse gives the inclusion into $[0, C_"GP"]$.
+  Every rate in $[0, C_"GP")$ is achievable, and the rate $0$ is achievable, so the closure contains $[0, C_"GP"]$.
 ]
 
 
