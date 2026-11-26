@@ -1195,15 +1195,6 @@ This is weak secrecy: the leakage per letter goes to $0$.
   The Csiszár-Körner capacity is the supremum of $I(V; Y) - I(V; Z)$ over all $k in NN$ and laws $q(v, x)$ on $[k] times A$, where $(V, X, Y, Z)$ has the law $q(v, x) W(y, z given x)$.
 ]
 
-#theorem("Secrecy capacity, Csiszár and Körner")[
-  For every wiretap channel, the closure of the set of achievable rates $R >= 0$ is $[0, C_"CK"(W)]$.
-][
-  Achievability uses a random codebook with $e^(n (I(V; Y) - I(V; Z)))$ bins, each with $e^(n I(V; Z))$ codewords drawn from $p_V$, and a channel prefix $p(x given v)$.
-  The private randomness picks the codeword in the bin, and this confuses the eavesdropper.
-  The converse uses the Csiszár sum identity, with $V_i := (M, Y^(i - 1), Z_(i + 1)^n)$.
-  This theorem is not in Lean.
-]
-
 #lemma(
   "Converse for one wiretap code",
   lean: ("Meat.WiretapCode.measureReal_dec_ne", "Meat.WiretapCode.entropy_message", "Meat.WiretapCode.one_sub_mul_log_card_le"),
@@ -1727,4 +1718,133 @@ Write $w(C) := product_u p^n (C(u))$.
 
 Achievability holds for every wiretap channel, not only for degraded ones.
 For a general channel, Csiszár and Körner add an auxiliary variable $V$ and a channel prefix from $V$ to $X$, and the capacity is the supremum of $I(V; Y) - I(V; Z)$.
-Their converse uses the Csiszár sum identity, which is not in Lean.
+The next two sections prove their theorem.
+
+
+== Wiretap converse, Csiszár and Körner
+#source("Meat.Channel.WiretapCK")
+
+This section proves that every achievable rate of a general wiretap channel is at most $C_"CK" (W)$.
+The channel need not be degraded.
+The proof follows the converse for the degraded channel, but it uses the Csiszár sum identity in place of the Markov chain $X -> Y -> Z$.
+
+#lemma(
+  "Conditioning by cases",
+  lean: ("Meat.Wiretap.condEntropy_eq_sum_cond", "Meat.Wiretap.condMutualInfo_eq_sum_cond"),
+)[
+  For random variables $X$, $Y$ and $V$ on finite alphabets,
+  $ H(X given V) = sum_v P(V = v) H(X given V = v), quad I(X; Y given V) = sum_v P(V = v) I(X; Y given V = v), $
+  where $H(X given V = v)$ is the entropy of $X$ under the conditional measure $mu[dot given V = v]$.
+][
+  Write $P(X = x, V = v) = P(V = v) P(X = x given V = v)$ and use $-a b log (a b) = -a b log a - a b log b$.
+  The terms with $P(V = v) = 0$ are $0$.
+  The second identity follows from the first, applied to $X$, $Y$ and $(X, Y)$.
+]
+
+#lemma(
+  "Bounds by the capacity",
+  lean: (
+    "Meat.Wiretap.ckRate_le_ckCapacity",
+    "Meat.Wiretap.le_ckCapacity_of_kernel",
+    "Meat.Wiretap.kernel_comp",
+    "Meat.Wiretap.condMutualInfo_le_ckCapacity",
+    "Meat.Wiretap.ckCapacity_nonneg",
+  ),
+)[
+  Let $(V, X, S)$ be random variables with $V in [k]$ and $S = (Y, Z)$, such that the law of $S$ given $(V, X)$ is $W(dot given X)$.
+  Then $I(V; Y) - I(V; Z) <= C_"CK" (W)$.
+  If this holds given each value of a further variable $G$, then $I(V; Y given G) - I(V; Z given G) <= C_"CK" (W)$.
+  Also $C_"CK" (W) >= 0$.
+][
+  The law of $(V, X)$ is a law $q$ on $[k] times A$, and the law of $(V, X, S)$ is $q(v, x) W(s given x)$.
+  So $I(V; Y) - I(V; Z)$ is one of the terms in the supremum, which is bounded by $log |B|$.
+  If the kernel property holds for a variable $H$, it also holds for every function $F(H)$, by summing over the fibres of $F$.
+  For the conditional claim, condition by cases on $G$ and use that the weights $P(G = g)$ sum to $1$.
+  The capacity is nonnegative because the term with $k = 0$ is the empty supremum $0$.
+]
+
+#lemma(
+  "Csiszár sum for the wiretap channel",
+  lean: (
+    "Meat.Wiretap.mutualInfo_eq_sum_Iio",
+    "Meat.Wiretap.mutualInfo_eq_sum_Ioi",
+    "Meat.Wiretap.mutualInfo_sub_eq_sum",
+  ),
+)[
+  For random variables $M$, $Y^n$ and $Z^n$, let $T_i := (Y^(i - 1), Z_(i + 1)^n)$.
+  Then
+  $ I(M; Y^n) - I(M; Z^n) = sum_(i = 1)^n (I(M; Y_i given T_i) - I(M; Z_i given T_i)). $
+][
+  By the chain rule, $I(M; Y^n) = sum_i I(M; Y_i given Y^(i - 1))$, and, in the reverse order, $I(M; Z^n) = sum_i I(M; Z_i given Z_(i + 1)^n)$.
+  Add $Z_(i + 1)^n$ to the first condition and $Y^(i - 1)$ to the second one with the chain rule.
+  The correction terms cancel by the Csiszár sum identity, once with $M$ and once without it.
+]
+
+#lemma(
+  "Converse for one wiretap code, general channel",
+  lean: ("Meat.Wiretap.ck_letter_le", "Meat.Wiretap.one_sub_mul_log_card_le_ck"),
+)[
+  For every wiretap code with $k$ messages,
+  $ (1 - overline(lambda)) log k <= I(M; Z^n) + n C_"CK" (W) + log 2. $
+][
+  Fix $i$ and let $V := M$ and $G := T_i$.
+  Given $(M, L)$ and all outputs except the one at time $i$, the output at time $i$ has law $W(dot given x_i)$, where $x_i$ is the letter of the codeword at time $i$.
+  So the conditional bound gives $I(M; Y_i given T_i) - I(M; Z_i given T_i) <= C_"CK" (W)$.
+  By the Csiszár sum, $I(M; Y^n) - I(M; Z^n) <= n C_"CK" (W)$.
+  Fano's inequality gives $(1 - overline(lambda)) log k <= I(M; Y^n) + log 2$.
+]
+
+#theorem("Converse for the wiretap channel, Csiszár and Körner", lean: "Meat.Wiretap.le_ckCapacity_of_achievable")[
+  Every achievable rate is at most $C_"CK" (W)$.
+][
+  Suppose $R > C_"CK"$ and let $delta := R - C_"CK"$ and $epsilon := delta \/ (2 (R + 1))$.
+  Take a code with $k >= e^(n R)$, $overline(lambda) <= epsilon$ and leakage at most $n epsilon$.
+  The converse for one code gives $(1 - epsilon) log k <= n epsilon + n C_"CK" + log 2$.
+  Since $(1 - epsilon) R - epsilon = C_"CK" + delta \/ 2$, this gives $n delta \/ 2 <= log 2$, which fails for large $n$.
+]
+
+== Wiretap achievability, Csiszár and Körner
+#source("Meat.Channel.WiretapCKAchievability")
+
+This section proves that every rate below $C_"CK" (W)$ is achievable.
+The idea is to put a channel prefix $V -> X$ in front of $W$ and use the wiretap code for the new channel with input $V$.
+A wiretap code has a deterministic encoder, so the prefix must be simulated with the private randomness $L$.
+Uniform randomness gives only rational conditional laws, so a continuity argument handles the other laws.
+
+#definition("Prefix channel", lean: ("Meat.Wiretap.prefixChannel", "Meat.Wiretap.prefixChannel_apply"))[
+  Let $m >= 1$ and $f : V times [m] -> A$.
+  The prefix channel $W_f$ from $V$ to $B times E$ picks $t in [m]$ uniformly and sends $f(v, t)$ through $W$:
+  $ W_f (s given v) = 1 / m sum_(t in [m]) W(s given f(v, t)). $
+]
+
+#theorem("Simulation of a prefix", lean: "Meat.Wiretap.achievable_of_prefixChannel")[
+  Every rate that is achievable for $W_f$ is achievable for $W$.
+][
+  Take a code $(g, d)$ for $W_f$ with messages $[k]$ and keys $[l]$.
+  The new code has keys $[l] times [m]^n$, numbered as $[l m^n]$, and it sends $x_i := f(g(m, l)_i, t_i)$ for the key $(l, t)$.
+  The decoder is $d$.
+  Summing over $t in [m]^n$, $sum_t W^n (y given x) = m^n W_f^n (y given g(m, l))$, because the product of sums is the sum of products.
+  So the joint law of the message and the outputs is the same for the two codes.
+  The average error and the leakage depend only on this law, so they are the same.
+]
+
+#theorem("Achievability for the wiretap channel, Csiszár and Körner", lean: "Meat.Wiretap.achievable_of_lt_ckCapacity")[
+  If $A$ is nonempty, then every $R$ with $0 <= R < C_"CK" (W)$ is achievable.
+][
+  Take $k$ and a law $q$ on $[k] times A$ with $I(V; Y) - I(V; Z) > R$.
+  Let $p_V$ be the law of $V$ and $kappa(x given v)$ the law of $X$ given $V = v$.
+  For $N >= 1$, round $N kappa(dot given v)$ down to integers, except at one fixed letter $x_0$, which gets the rest.
+  This gives counts $c_N (v, x)$ with $sum_x c_N (v, x) = N$, and a map $f_N : [k] times [N] -> A$ whose fibre over $x$ has $c_N (v, x)$ points.
+  The law $q_N (v, x) = p_V (v) c_N (v, x) \/ N$ converges to $q$, because $floor(N a) \/ N -> a$.
+  The rate $I(V; Y) - I(V; Z)$ is a sum of terms $-t log t$ of linear functions of the law, so it is continuous in the law.
+  So for some $N$, the rate of $q_N$ is larger than $R$.
+  This rate is the secrecy rate of $p_V$ for the prefix channel $W_(f_N)$.
+  The achievability of the secrecy rate makes $R$ achievable for $W_(f_N)$, and the simulation makes it achievable for $W$.
+]
+
+#theorem("Secrecy capacity, Csiszár and Körner", lean: "Meat.Wiretap.closure_achievable_eq_ckCapacity")[
+  If $A$ is nonempty, then the closure of the set of achievable rates $R >= 0$ is $[0, C_"CK" (W)]$.
+][
+  The converse puts the set inside the closed interval.
+  The rate $0$ is achievable, and every $R in [0, C_"CK")$ is achievable, so the closure of $[0, C_"CK")$ is in the closure of the set.
+]
