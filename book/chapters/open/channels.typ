@@ -38,7 +38,7 @@ This coding theorem is not in Lean.
 ]
 
 Nair and El Gamal (2007) proved that the achievable region is contained in $cal(O)(W)$.
-Their proof uses the Csiszár sum identity, and it is not in Lean.
+Their proof uses the Csiszár sum identity, and the section on the UV outer bound proves it.
 The UV outer bound is known not to be tight in general.
 
 #lemma(
@@ -331,6 +331,73 @@ All sets are finite.
   Then $|R_j - r_j| <= 2 overline(lambda) R_j + log 2 / n < delta$.
   The other inclusion is the superposition inner bound.
 ]
+
+== The UV outer bound
+#source("Meat.Open.BroadcastUV")
+
+This section proves the UV outer bound of Nair and El Gamal (2007) for two private messages.
+The proof has four steps: Fano's inequality, the chain rule with the auxiliary variables of Nair and El Gamal, the Csiszár sum identity, and time sharing.
+Let $(M_1, M_2)$ be uniform, let $X^n$ be the codeword, and let $(Y_1^n, Y_2^n)$ be the outputs.
+For each time $i$ let $D_i := Y_1^(i - 1)$ and $F_i := (Y_(2, i + 1), dots, Y_(2, n))$.
+The auxiliary variables are
+$ U_i := (M_1, D_i, F_i), quad V_i := (M_2, D_i, F_i). $
+In Lean the pair $(D_i, F_i)$ is one word in $(B_1 times B_2)^n$: coordinate $j < i$ holds $Y_(1, j)$, coordinate $j > i$ holds $Y_(2, j)$, and the free slots hold a fixed symbol.
+This word determines $(D_i, F_i)$ and is determined by it, so it carries the same information.
+The helper lemmas are private.
+
+#theorem(
+  "UV outer bound",
+  lean: ("Meat.BC.achievableRegion_subset_closure_uvRegion", "Meat.BC.closure_achievableRegion_subset_uvRegion"),
+)[
+  For every broadcast channel $W$,
+  $ cal(A)(W) subset.eq overline(cal(O)(W)), quad overline(cal(A)(W)) subset.eq overline(cal(O)(W)). $
+][
+  Take a code of length $n$ with average error $overline(lambda)$ and $k_j >= e^(n R_j)$ messages for receiver $j$.
+  Use the twin block code, so that each receiver errs with probability at most $2 overline(lambda)$.
+
+  _Fano._
+  Since $H(M_1, M_2) = log k_1 + log k_2$, we get $log k_1 <= H(M_1 given M_2) <= H(M_1)$ and the same with 1 and 2 swapped.
+  Fano's inequality bounds $H(M_j given Y_j^n)$ by $log 2 + 2 overline(lambda) log k_j$.
+  With $x_j := (1 - 2 overline(lambda)) log k_j - log 2$ this gives
+  $ x_1 <= I(M_1; Y_1^n), quad x_2 <= I(M_2; Y_2^n), quad x_2 <= I(M_2; Y_2^n given M_1), quad x_1 <= I(M_1; Y_1^n given M_2). $
+  For the conditional bounds, $H(M_2 given Y_2^n, M_1) <= H(M_2 given Y_2^n)$.
+
+  _Chain rule._
+  Write $T_i := Y_(1, i)$ and $S_i := Y_(2, i)$.
+  The chain rule forwards and backwards gives
+  $ I(M_1; Y_1^n) = sum_i I(M_1; T_i given D_i), quad I(M_2; Y_2^n) = sum_i I(M_2; S_i given F_i), $
+  and $I(M_2; Y_2^n given M_1) = sum_i I(M_2; S_i given M_1, F_i)$, by the chain rule for the pair $(M_1, M_2)$.
+  For each $i$, two applications of the chain rule give
+  $ I(M_1; T_i given D_i) + I(F_i; T_i given M_1, D_i) <= I(U_i; T_i). $
+  Also
+  $ I(M_2; S_i given M_1, F_i) <= I(D_i; S_i given M_1, F_i) + I(M_2; S_i given U_i). $
+  The channel is memoryless, so $(M_1, M_2, D_i, F_i) -> X_i -> S_i$, and $X_i$ is a function of $(M_1, M_2)$.
+  So $H(S_i given M_2, U_i) >= H(S_i given X_i) >= H(S_i given X_i, U_i)$, and $I(M_2; S_i given U_i) <= I(X_i; S_i given U_i)$.
+
+  _Csiszár sum identity._
+  With $M_1$ as the common conditioning variable,
+  $ sum_i I(F_i; T_i given M_1, D_i) = sum_i I(D_i; S_i given M_1, F_i). $
+  Adding the letter bounds, the two sums cancel:
+  $ I(M_1; Y_1^n) + I(M_2; Y_2^n given M_1) <= sum_i (I(U_i; Y_(1, i)) + I(X_i; Y_(2, i) given U_i)). $
+  The same argument with $M_2$ in place of $M_1$ gives
+  $ I(M_2; Y_2^n) + I(M_1; Y_1^n given M_2) <= sum_i (I(V_i; Y_(2, i)) + I(X_i; Y_(1, i) given V_i)), $
+  and the bounds $I(M_1; Y_1^n) <= sum_i I(U_i; Y_(1, i))$ and $I(M_2; Y_2^n) <= sum_i I(V_i; Y_(2, i))$ follow on the way.
+
+  _Time sharing._
+  The law $L_i$ of $((M_1, M_2, D_i, F_i), X_i, Y_(1, i), Y_(2, i))$ is memoryless: it is the law of the first two coordinates times $W$.
+  Mix the laws $L_i$ with a uniform $Q$, and take $U := (Q, U_Q)$ and $V := (Q, V_Q)$.
+  The mixture is still memoryless, so it is a law $q(u, v) p_X (x given u, v) W(y_1, y_2 given x)$.
+  By the mixture lemma, $I(X; Y_2 given U)$ and $I(X; Y_1 given V)$ are the averages over $i$, and $I(U; Y_1)$ and $I(V; Y_2)$ are at least the averages.
+  Let $r_j := max(0, (1 - 2 overline(lambda)) R_j - log 2 / n)$.
+  Then $n r_j <= max(0, x_j)$, and each information term above is nonnegative.
+  So $(r_1, r_2) in cal(O)(q, p_X)$, and relabeling puts the auxiliary sets in the form $[k]$.
+  As in the degraded case, $|R_j - r_j| < delta$ for a good code with large $n$.
+  The second inclusion follows because the closure of $cal(O)(W)$ is closed.
+]
+
+The bound has $overline(cal(O)(W))$ on the right, not $cal(O)(W)$.
+The union $cal(O)(W)$ is closed once the auxiliary alphabets can be bounded, and that cardinality bound is not in Lean.
+
 
 == Relay channels
 #source("Meat.Open.Relay")
