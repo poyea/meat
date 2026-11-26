@@ -16,6 +16,7 @@ import Meat.Shannon.Conditional
 import Meat.Shannon.LargeNumbers
 import Meat.Shannon.LogSum
 import Meat.Shannon.Covering
+import Meat.Shannon.StrongTypical
 import Meat.Shannon.Types
 import Meat.Shannon.JointTypes
 import Meat.Shannon.StrongCovering
@@ -64,6 +65,7 @@ import Meat.Channel.MultipleAccessKTheorem
 import Meat.Channel.Compound
 import Meat.Channel.StateIid
 import Meat.Channel.ShannonStrategy
+import Meat.Channel.StateBoth
 import Meat.Channel.GelfandPinskerConverse
 import Meat.Channel.GelfandPinskerAchievability
 import Meat.Channel.GelfandPinsker
@@ -127,4 +129,5 @@ import Meat.Examples.Uniform
 import Meat.Examples.Noiseless
 import Meat.Examples.BSC
 import Meat.Examples.BEC
+import Meat.Examples.Product
 import Meat.Examples.HuffmanExample
