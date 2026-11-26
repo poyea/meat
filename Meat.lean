@@ -79,6 +79,9 @@ import Meat.Continuous.WaterFilling
 import Meat.Continuous.ParallelGaussian
 import Meat.Continuous.MIMO
 import Meat.Continuous.GaussianMultiUser
+import Meat.Continuous.GaussianMAC
+import Meat.Continuous.GaussianMACQuantization
+import Meat.Continuous.GaussianMACAchievability
 import Meat.Testing.Stein
 import Meat.Testing.Sanov
 import Meat.Testing.Chernoff
@@ -97,6 +100,8 @@ import Meat.Open.EntropicFormula
 import Meat.Open.Interactive
 import Meat.Open.Interference
 import Meat.Open.InterferenceK
+import Meat.Open.InterferenceStrongConverse
+import Meat.Open.InterferenceStrongAchievability
 import Meat.Open.TwoWay
 import Meat.Open.MACFeedback
 import Meat.Open.Broadcast
