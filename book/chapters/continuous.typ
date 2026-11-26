@@ -902,7 +902,7 @@ The second item is the Karush-Kuhn-Tucker condition: the channels that get power
 
 This section has the regions of the Gaussian multiple access channel $Y = X_1 + X_2 + Z$ and of the degraded Gaussian broadcast channel $Y_j = X + Z_j$, the algebra of their corner points, and the maximum entropy bounds behind their converses.
 The next section proves the operational capacity theorem of the multiple access channel.
-The operational theorem of the broadcast channel is not formalized.
+The section after it proves the inner bound of the broadcast channel; its converse needs the entropy power inequality and is not formalized.
 
 #lemma(
   "Capacity algebra",
@@ -1135,6 +1135,153 @@ For this, the gain uses the Gaussian posterior for the noise variance $theta_1 +
   The case $P_2 = 0$ is symmetric.
   If $P_1, P_2 > 0$, then $C(P_j, N) > 0$, and for a point $R$ of the region and $eta > 0$ the point $(max(R_1 - eta \/ 2, 0), max(R_2 - eta \/ 2, 0))$ satisfies the strict inequalities of the achievability theorem.
 ]
+
+
+== The degraded Gaussian broadcast channel
+#source("Meat.Continuous.GaussianBroadcast")
+
+The Gaussian broadcast channel maps an input $x in RR$ to $Y_1 = x + Z_1$ and $Y_2 = x + Z_2$, with $Z_j ~ cal(N)(0, N_j)$, independent of each other and across channel uses.
+The codewords satisfy the power constraint $P$.
+The error event depends only on the marginal laws of the two outputs, so the independence of $Z_1$ and $Z_2$ is no restriction.
+
+#definition(
+  "Codes and achievable pairs",
+  lean: (
+    "Meat.GaussianBroadcast.Code",
+    "Meat.GaussianBroadcast.Code.errorProb",
+    "Meat.GaussianBroadcast.Code.avgError",
+    "Meat.GaussianBroadcast.Achievable",
+  ),
+)[
+  A code of length $n$ with $k_1$ and $k_2$ messages and power $P$ is a triple $(f, g_1, g_2)$.
+  The encoder $f : [k_1] times [k_2] -> RR^n$ satisfies $sum_i f(m)_i^2 <= n P$ for every $m$.
+  The decoders $g_j : RR^n -> [k_j]$ are measurable.
+  The error probability of $m = (m_1, m_2)$ is
+  $ lambda_m := (cal(N)(0, N_1)^(times.o n) times.o cal(N)(0, N_2)^(times.o n)) ({(z_1, z_2) : (g_1 (f(m) + z_1), g_2 (f(m) + z_2)) != m}), $
+  and $overline(lambda) := (k_1 k_2)^(-1) sum_m lambda_m$.
+  Achievable pairs are defined as for the multiple access channel.
+]
+
+#lemma("Union bound", lean: "Meat.GaussianBroadcast.Code.errorProb_le")[
+  $lambda_m$ is at most the probability that $g_1$ errs on $m_1$ plus the probability that $g_2$ errs on $m_2$.
+][
+  The error event is contained in the union of the two cylinders, whose measures are the two single-receiver error probabilities.
+]
+
+#lemma(
+  "One silent user",
+  lean: ("Meat.GaussianBroadcast.achievable_zero_left", "Meat.GaussianBroadcast.achievable_zero_right"),
+)[
+  If $R$ is achievable for the AWGN channel with power $P$ and noise $N_2$, then $(0, R)$ is achievable.
+  If $R$ is achievable for noise $N_1$, then $(R, 0)$ is achievable.
+][
+  The silent user has one message and a constant decoder, which never errs.
+  By the union bound, the error probability is at most that of the AWGN code.
+]
+
+#source("Meat.Continuous.GaussianBroadcastQuantization")
+
+The inner bound uses superposition coding.
+User $2$ gets the cloud: the levels of $L$ independent $cal(N)(0, theta_2)$ variables.
+User $1$ gets the satellite: the levels of $L$ independent $cal(N)(0, theta_1)$ variables.
+The sum is sent if its power is at most $L P$, and the zero block is sent otherwise.
+Clipping the sum, not each part, keeps the power constraint for every codeword.
+
+#definition(
+  "Clipped superposition",
+  lean: (
+    "Meat.GaussianBroadcast.sumClip",
+    "Meat.GaussianBroadcast.sum_sq_sumClip_le",
+    "Meat.GaussianBroadcast.sumSignal",
+    "Meat.GaussianBroadcast.measurable_sumSignal",
+    "Meat.GaussianBroadcast.sumBad",
+    "Meat.GaussianBroadcast.measurableSet_sumBad",
+    "Meat.GaussianBroadcast.sumSignal_of_notMem",
+  ),
+)[
+  For $w in RR^L$, $"clip"_P (w) := w$ if $sum_l w_l^2 <= L P$, and $0$ otherwise.
+  Its power is at most $L P$ when $P >= 0$.
+  For blocks $t_1, t_2 in RR^L$, the signal is $S(t_1, t_2) := "clip"_P (Q_n (t_1) + Q_n (t_2))$, with $Q_n$ applied to each letter.
+  The bad set is the set of $(t_1, t_2)$ where the clipping acts, and outside it $S(t_1, t_2) = Q_n (t_1) + Q_n (t_2)$.
+]
+
+#lemma(
+  "Clipping is rare",
+  lean: "Meat.GaussianBroadcast.eventually_tendsto_sumBad",
+)[
+  If $theta_1, theta_2 > 0$ and $theta_1 + theta_2 < P$, then for all large $n$ the probability of the bad set tends to $0$ as $L -> infinity$.
+][
+  By dominated convergence with the bound $3 a^2 + 3 b^2 + 12$, $bb(E) (Q_n (T_1) + Q_n (T_2))^2 -> bb(E) (T_1 + T_2)^2 = theta_1 + theta_2 < P$.
+  Fix such an $n$.
+  The letters of $(T_1, T_2)$ are i.i.d., so Chebyshev's inequality bounds the probability of the bad set by $"Var" \/ (L (P - m_n)^2)$, as in the AWGN coding theorem.
+]
+
+#lemma(
+  "Gains of the two receivers",
+  lean: ("Meat.GaussianBroadcast.integral_satGain_ge", "Meat.GaussianBroadcast.integral_cloudGain_ge"),
+)[
+  Let $theta_1, theta_2, N > 0$, $c > 0$, and let $beta$ be the probability of the bad set.
+  For the satellite, with $u_n$ the function for $theta_1$ and $N$,
+  $ bb(E) sum_l log u_n (T_(1 l), k_n (S(T_1, T_2)_l - Q_n (T_(2 l)) + Z_l)) >= L J_n - L ((4 n c + 4 n^2) beta + 4 n theta_1 \/ c) / (2 s). $
+  For the cloud, with $u'_n$ the function for $theta_2$ and $theta_1 + N$ and $s'$ its variance,
+  $ bb(E) sum_l log u'_n (T_(2 l), k_n (S(T_1, T_2)_l + Z_l)) >= L J'_n - L ((4 n c + 4 n^2) beta + 4 n theta_2 \/ c) / (2 s'). $
+][
+  As for the multiple access channel.
+  Outside the bad set the summands are i.i.d. with means $J_n$ and $J'_n$.
+  On the bad set, the difference of the logarithms is at most $(4 n |t| + 4 n^2) \/ (2 s)$ and $|t| <= c + t^2 \/ c$.
+]
+
+#source("Meat.Continuous.GaussianBroadcastAchievability")
+
+#definition(
+  "Discrete broadcast block channel",
+  lean: (
+    "Meat.GaussianBroadcast.blockChannel₂",
+    "Meat.GaussianBroadcast.map_fst_blockChannel₂",
+    "Meat.GaussianBroadcast.map_snd_blockChannel₂",
+  ),
+)[
+  For a finite alphabet $A$ with a map $a : A -> RR^L$ and measurable quantizers $q_1, q_2$, the broadcast channel sends $x$ to the independent pair $(q_1 (a(x) + Z_1), q_2 (a(x) + Z_2))$.
+  Its marginals are the block channels for the two receivers.
+]
+
+#theorem("Reduction to a discrete channel", lean: "Meat.GaussianBroadcast.achievable_of_lt_blockChannel")[
+  Let $P, R_1, R_2 >= 0$, $L >= 1$, $a$ of power at most $L P$, and let $p_U$ and $p_(X | U)$ be a cloud law and a satellite channel for this discrete broadcast channel.
+  If $L R_1 < I(X; Y_1 | U)$, $L R_2 < I(U; Y_2)$ and $L (R_1 + R_2) < I(X; Y_1)$, then $(R_1, R_2)$ is achievable.
+][
+  The superposition coding theorem gives codes of length $m$ for rates $L (R_j + delta)$.
+  Send them blockwise as for the multiple access channel.
+  By the union bound, the Gaussian error is at most the sum of the two single-receiver errors of the discrete code.
+  Each is at most the discrete error, so the average error is at most twice the discrete one.
+]
+
+#theorem("Superposition coding", lean: "Meat.GaussianBroadcast.achievable_of_lt")[
+  Let $theta_1, theta_2 > 0$ with $theta_1 + theta_2 < P$, $0 < N_1 <= N_2$ and $R_1, R_2 >= 0$.
+  If $R_1 < C(theta_1, N_1)$ and $R_2 < C(theta_2, theta_1 + N_2)$, then $(R_1, R_2)$ is achievable.
+][
+  Use the clipped superposition with the cloud $U$ of user $2$ and the satellite of user $1$.
+  Receiver $1$ quantizes $y$ and also $y - Q_n (u)$ for every cloud block $u$.
+  The variational lower bound on information gives three bounds.
+  First, $I(X; Y_1 | U) = I(V; U, Y_1)$, where $V$ is the satellite, is at least the satellite expectation of the previous lemma with noise $N_1$.
+  This uses the independence of $U$ and $V$, and that $(V, U)$ given $U$ carries the same information as $V$.
+  Second, $I(U; Y_2)$ is at least the cloud expectation with noise $N_2$.
+  Third, $I(X; Y_1)$ is at least the sum of the cloud and satellite expectations with noise $N_1$, with the product test function of the multiple access proof.
+  The first two bounds average over the other user's block, which is undone with Fubini's theorem.
+  By the limits of $J_n$ and $J'_n$, and since clipping is rare, the bounds exceed $L (C(theta_1, N_1) - 2 eta)$, $L (C(theta_2, theta_1 + N_2) - 2 eta)$ and $L (C(theta_1, N_1) + C(theta_2, theta_1 + N_1) - 4 eta)$.
+  Since $N_1 <= N_2$, $C(theta_2, theta_1 + N_2) <= C(theta_2, theta_1 + N_1)$, so the reduction applies.
+]
+
+#theorem("Inner bound for the degraded Gaussian broadcast channel", lean: "Meat.GaussianBroadcast.bcRegion_subset_closure")[
+  If $P >= 0$ and $0 < N_1 <= N_2$, the degraded Gaussian broadcast region is contained in the closure of the set of achievable pairs $(R_1, R_2) >= 0$.
+][
+  Let $(R_1, R_2)$ be in the set for $alpha$.
+  If $alpha P = 0$, then $R_1 = 0$ and $R_2 <= C(P, N_2)$, and the AWGN coding theorem with a silent user gives the point.
+  If $(1 - alpha) P = 0$, the same holds with the users exchanged.
+  Otherwise, for $eta > 0$ choose $tau < 1$ close to $1$ and apply superposition coding with $theta_1 = tau alpha P$ and $theta_2 = tau (1 - alpha) P$ to $(max(R_1 - eta \/ 2, 0), max(R_2 - eta \/ 2, 0))$.
+  Both capacities are continuous in $tau$ and positive for $tau > 0$.
+]
+
+The converse, and so the equality of the closure with the region, needs the entropy power inequality.
 
 
 == Parallel Gaussian channels
