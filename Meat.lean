@@ -36,6 +36,9 @@ import Meat.Source.RateDistortionConverse
 import Meat.Source.RateDistortionAchievability
 import Meat.Source.RateDistortionTheorem
 import Meat.Source.WynerZiv
+import Meat.Source.WynerZivEncoder
+import Meat.Source.WynerZivAchievability
+import Meat.Source.WynerZivTheorem
 import Meat.Channel.Basic
 import Meat.Channel.Achievability
 import Meat.Channel.Converse
@@ -61,6 +64,9 @@ import Meat.Channel.MultipleAccessKTheorem
 import Meat.Channel.Compound
 import Meat.Channel.StateIid
 import Meat.Channel.ShannonStrategy
+import Meat.Channel.GelfandPinskerConverse
+import Meat.Channel.GelfandPinskerAchievability
+import Meat.Channel.GelfandPinsker
 import Meat.Channel.MultipleAccessKTwo
 import Meat.Channel.BroadcastK
 import Meat.Network.Coding
@@ -105,6 +111,7 @@ import Meat.Open.Interference
 import Meat.Open.InterferenceK
 import Meat.Open.InterferenceStrongConverse
 import Meat.Open.InterferenceStrongAchievability
+import Meat.Open.InterferenceNoise
 import Meat.Open.TwoWay
 import Meat.Open.MACFeedback
 import Meat.Open.Broadcast
