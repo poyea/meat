@@ -93,6 +93,9 @@ import Meat.Continuous.GaussianMultiUser
 import Meat.Continuous.GaussianMAC
 import Meat.Continuous.GaussianMACQuantization
 import Meat.Continuous.GaussianMACAchievability
+import Meat.Continuous.GaussianBroadcast
+import Meat.Continuous.GaussianBroadcastQuantization
+import Meat.Continuous.GaussianBroadcastAchievability
 import Meat.Testing.Stein
 import Meat.Testing.Sanov
 import Meat.Testing.Chernoff
