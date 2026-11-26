@@ -1639,7 +1639,56 @@ In each case the problem reduces to the point-to-point coding theorem on a suita
 ]
 
 The encoder here sees the state causally.
-With noncausal state at the encoder and the state at the decoder, the capacity is the same, but the converse needs a different argument, which is not in Lean.
+With noncausal state at the encoder and the state at the decoder, the capacity is the same, but the converse needs a different argument, given next.
+
+
+=== Noncausal state at both ends
+#source("Meat.Channel.StateBoth")
+
+Now the encoder sees the whole state sequence before it sends, and the decoder sees it too.
+The capacity does not change: knowing the future states does not help when the decoder knows them as well.
+
+#definition(
+  "Noncausal codes with state at both ends",
+  lean: (
+    "Meat.StateIid.NoncausalCode",
+    "Meat.StateIid.NoncausalCode.avgError",
+    "Meat.StateIid.NoncausalCode.ofBothCode",
+    "Meat.StateIid.NoncausalCode.avgError_ofBothCode",
+    "Meat.StateIid.NoncausalAchievable",
+  ),
+)[
+  A code is an encoder $f : M times S^n -> A^n$ and a decoder $g : B^n times S^n -> M$.
+  Its error is
+  $ P_e := 1 / |M| sum_m sum_(s^n) sum_(y^n : g(y^n, s^n) != m) product_i p_S (s_i) W(y_i given f(m, s^n)_i, s_i). $
+  A causal code with state at both ends is a noncausal code with the same error.
+]
+
+#lemma(
+  "Slicing by the state sequence",
+  lean: ("Meat.StateIid.NoncausalCode.slice", "Meat.StateIid.NoncausalCode.avgError_eq_sum_slice"),
+)[
+  For a fixed state sequence $s^n$, the code gives a block code for $W$ with input alphabet $A times S$: the codeword of $m$ is $(f(m, s^n)_i, s_i)_i$ and the decoder is $g(dot, s^n)$.
+  The error of the noncausal code is the average of the errors of these block codes under $p_S^n$.
+][
+  For fixed $m$, $s^n$ and $y^n$, the summand splits as $product_i p_S (s_i)$ times the block probability of the slice.
+]
+
+#theorem(
+  "Capacity with noncausal state at both ends",
+  lean: ("Meat.StateIid.le_of_noncausalAchievable", "Meat.StateIid.closure_noncausalAchievable_eq"),
+)[
+  Every achievable rate is at most $sum_s p_S (s) C(W(dot given dot, s))$.
+  If $A$ is nonempty, the closure of the achievable rates $R >= 0$ is $[0, sum_s p_S (s) C(W(dot given dot, s))]$.
+][
+  Fix $s^n$.
+  Fano's inequality for the slice gives $(1 - P_e (s^n)) log |M| <= sum_i I_W (p_i) + log 2$, where $p_i$ is the law of the $i$-th input of the slice.
+  That law is concentrated on $A times {s_i}$, so $I_W (p_i)$ is the information of $W(dot given dot, s_i)$ for the law of the first coordinate, at most $C(W(dot given dot, s_i))$.
+  The bound is linear in $P_e (s^n)$, so average over $s^n$.
+  The average of $sum_i C(W(dot given dot, s_i))$ is $n sum_s p_S (s) C(W(dot given dot, s))$, because each $s_i$ has law $p_S$.
+  Conclude as in the weak converse.
+  For achievability, causal codes are noncausal codes, and their closure is already the interval.
+]
 
 
 == Causal state at the encoder: Shannon strategies

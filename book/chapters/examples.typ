@@ -311,6 +311,71 @@ The result is easy to read.
 A fraction $e$ of the bits is lost, and the other bits arrive without error.
 So at most a fraction $1 - e$ of a bit gets through per use.
 
+== Products and sums of channels
+#source("Meat.Examples.Product")
+
+Two channels can be used side by side, or one of them can be chosen at each use.
+Shannon (1948) computed both capacities.
+Using both channels in parallel adds the capacities.
+Choosing one channel at each use adds the exponentials: $e^C = e^(C_1) + e^(C_2)$.
+
+#definition(
+  "Product laws and product channels",
+  lean: (
+    "Meat.Examples.prodPMF",
+    "Meat.Examples.prodChannel",
+    "Meat.Examples.prodPMF_apply",
+    "Meat.Examples.map_fst_prodPMF",
+    "Meat.Examples.map_snd_prodPMF",
+  ),
+)[
+  For laws $p_1$ on $A_1$ and $p_2$ on $A_2$, the product law is $(p_1 times.o p_2)(a_1, a_2) = p_1 (a_1) p_2 (a_2)$; its marginals are $p_1$ and $p_2$.
+  The product of channels $W_1 : A_1 -> B_1$ and $W_2 : A_2 -> B_2$ is $(W_1 times W_2)((b_1, b_2) given (a_1, a_2)) = W_1 (b_1 given a_1) W_2 (b_2 given a_2)$.
+]
+
+#lemma(
+  "Information of a product channel",
+  lean: ("Meat.Examples.inputMutualInfo_prodChannel_le", "Meat.Examples.inputMutualInfo_prodChannel_prodPMF"),
+)[
+  For every input law $p$ on $A_1 times A_2$ with marginals $p_1$ and $p_2$,
+  $ I_(W_1 times W_2)(p) <= I_(W_1)(p_1) + I_(W_2)(p_2), $
+  with equality when $p = p_1 times.o p_2$.
+][
+  The map $((a_1, a_2), (b_1, b_2)) |-> (a_1, b_1)$ sends the joint law to the joint law of $W_1$ and $p_1$, and the same holds for the second coordinates.
+  Since $log (W_1 W_2) = log W_1 + log W_2$ on the support, $H(Y given X) = H(Y_1 given X_1) + H(Y_2 given X_2)$.
+  Subadditivity gives $H(Y_1, Y_2) <= H(Y_1) + H(Y_2)$.
+  For a product input, the output law is the product of the output laws, so $Y_1$ and $Y_2$ are independent and $I(Y_1 ; Y_2) = 0$.
+]
+
+#theorem("Capacity of a product channel", lean: "Meat.Examples.capacity_prodChannel")[
+  If $A_1$ and $A_2$ are nonempty,
+  $ C(W_1 times W_2) = C(W_1) + C(W_2). $
+][
+  The lemma bounds every $I_(W_1 times W_2)(p)$ by $C(W_1) + C(W_2)$.
+  For $delta > 0$, pick $p_k$ with $I_(W_k)(p_k) > C(W_k) - delta / 2$; the product input reaches $C(W_1) + C(W_2) - delta$.
+]
+
+#definition(
+  "Sum of channels",
+  lean: ("Meat.Examples.sumChannel", "Meat.Examples.measurableSingletonClass_sum"),
+)[
+  The sum $W_1 plus.o W_2 : A_1 union.sq A_2 -> B_1 union.sq B_2$ uses $W_1$ on inputs from $A_1$ and $W_2$ on inputs from $A_2$, and the output shows which channel was used.
+  Singletons in a disjoint union of measurable spaces with measurable singletons are measurable.
+]
+
+#theorem("Capacity of a sum channel", lean: "Meat.Examples.capacity_sumChannel")[
+  If $A_1$ and $A_2$ are nonempty,
+  $ C(W_1 plus.o W_2) = log(e^(C(W_1)) + e^(C(W_2))). $
+][
+  Write an input law as $p = lambda p_1 + (1 - lambda) p_2$, with $lambda$ the mass of $A_1$; take any $p_k$ when its weight is $0$.
+  The output law on $B_1$ is $lambda q_1$ and on $B_2$ is $(1 - lambda) q_2$, and $u v log(u v) = v (u log u) + u (v log v)$, so
+  $ I(p) = h(lambda) + lambda I_(W_1)(p_1) + (1 - lambda) I_(W_2)(p_2), $
+  with $h(lambda) = -lambda log lambda - (1 - lambda) log(1 - lambda)$.
+  For all $c_1, c_2$ and $lambda in [0, 1]$, Gibbs' inequality against the law $(e^(c_1), e^(c_2)) / (e^(c_1) + e^(c_2))$ gives $h(lambda) + lambda c_1 + (1 - lambda) c_2 <= log(e^(c_1) + e^(c_2))$, with equality at $lambda = e^(c_1) / (e^(c_1) + e^(c_2))$.
+  This bounds every $I(p)$, and near-optimal $p_1, p_2$ with the optimal $lambda$ come within any $delta$ of the bound.
+]
+
+
 == A dyadic source and its Huffman code
 #source("Meat.Examples.HuffmanExample")
 
