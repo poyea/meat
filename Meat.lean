@@ -76,6 +76,9 @@ import Meat.Channel.GelfandPinskerAchievability
 import Meat.Channel.GelfandPinsker
 import Meat.Channel.MultipleAccessKTwo
 import Meat.Channel.BroadcastK
+import Meat.Open.BroadcastKConverse
+import Meat.Channel.BroadcastKAchievability
+import Meat.Channel.BroadcastKCapacity
 import Meat.Network.Coding
 import Meat.Network.CutSetBound
 import Meat.Network.Linear
