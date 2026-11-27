@@ -1312,3 +1312,167 @@ Write $q_(X U)$ and $q_(Y U)$ for its marginals on $S times [m]$ and $T times [m
 ]
 
 The region is not shown to be closed here, because that needs a bound on the size of $U$.
+
+== Time sharing over i.i.d. letters
+#source("Meat.Source.TimeSharing")
+
+Converses for sources with side information define an auxiliary variable $U_i$ for each letter and then mix the letters with a uniform time $Q$.
+This section collects the facts about i.i.d. letters that this step needs.
+Let $p$ be a law on $A$ and let $X^n$ have the law $p^n$.
+Write $X_(-i)$ for the letters of $X^n$ other than $X_i$.
+
+#lemma(
+  "Independent letters",
+  lean: ("Meat.markovChain_of_indep", "Meat.mutualInfo_rest_iidMeasure", "Meat.condEntropy_letter_iidMeasure"),
+)[
+  If $U = f(X, R)$ and $I(R; X, Y) = 0$, then $U -> X -> Y$.
+  Under $p^n$, $I(X_(-i); X_i) = 0$.
+  If $p$ is a law on $S times T$ and $(X_i, Y_i)$ is letter $i$, then $H(X_i given (X, Y)_(-i), Y_i) = H(X_i given Y_i)$.
+][
+  For the first statement, $I(U; Y given X) <= I(R; Y given X)$, because $U$ is a function of $R$ given $X$.
+  The chain rule gives $I(R; X, Y) = I(R; X) + I(R; Y given X)$, so $I(R; Y given X) = 0$.
+  For the second, split $p^n$ as $p$ on letter $i$ times $p^(n - 1)$ on the others, so the joint law is the product of the marginals.
+  For the third, $I((X, Y)_(-i); X_i given Y_i) <= I((X, Y)_(-i); X_i, Y_i) = 0$.
+]
+
+#definition("Mixture with a uniform time", lean: "Meat.iidMix")[
+  For $n >= 1$, the law $"mix"_n (p)$ on $[n] times A^n$ is $"mix"_n (p) (i, x) := p^n (x) \/ n$.
+  So $Q$ is uniform on $[n]$ and independent of $X^n$.
+]
+
+#lemma("Entropy of a mixture", lean: ("Meat.map_iidMix_const", "Meat.entropy_iidMix"))[
+  Let $G_i$ be maps on $A^n$.
+  If every $G_i (X^n)$ has the same law $rho$, then $G_Q (X^n)$ has the law $rho$.
+  If $e$ is injective and $V = e(Q, G_Q (X^n))$, then
+  $ H(V) = log n + 1 / n sum_i H(G_i (X^n)). $
+][
+  The mass of $(i, w)$ under the law of $(Q, G_Q (X^n))$ is $1 / n$ times the mass of $w$ under the law of $G_i (X^n)$.
+  For the first statement, sum over $i$.
+  For the second, $H(V) = H(Q, G_Q (X^n))$, and $-(a \/ n) log(a \/ n) = (a log n - a log a) \/ n$ for each mass $a$.
+]
+
+== Source coding with a helper
+#source("Meat.Source.Helper")
+
+The encoder sees a source $X$, and a helper sees correlated side information $Y$.
+Both send an index at a finite rate, and the decoder recovers $X$ without loss.
+Ahlswede and Körner (1975) and Wyner (1975) found the rate region.
+In this section, $p$ is a law on $S times T$, and the letters $(X_i, Y_i)$ are i.i.d. with law $p$.
+The helper lemmas are private.
+
+#definition("Helper code", lean: ("Meat.HelperCode", "Meat.HelperCode.errorProb"))[
+  A helper code of length $n$ is a triple of maps $f : S^n -> [k_1]$, $g : T^n -> [k_2]$ and $phi : [k_1] times [k_2] -> S^n$.
+  Its error probability is $P_e := P(phi(f(X^n), g(Y^n)) != X^n)$ under $p^n$.
+]
+
+#definition(
+  "Achievable rate pairs",
+  lean: ("Meat.Helper.Achievable", "Meat.Helper.achievableRegion"),
+)[
+  A pair $(R_1, R_2)$ is achievable if for every $epsilon > 0$ there exists $N$ such that for every $n >= N$ some code of length $n$ has $k_1 <= e^(n R_1)$, $k_2 <= e^(n R_2)$ and $P_e <= epsilon$.
+]
+
+#definition("Helper region", lean: "Meat.Helper.rateRegion")[
+  The region is the set of pairs $(R_1, R_2)$ such that some law of $(Y, X, U)$ on $T times S times [m]$, with $(X, Y)$ marginal $p$ and $U -> Y -> X$ a Markov chain, satisfies
+  $ H(X given U) <= R_1, quad I(Y; U) <= R_2. $
+]
+
+#theorem("Converse for one code", lean: "Meat.Helper.code_mem_rateRegion")[
+  For a code of length $n >= 1$,
+  $ ((log k_1 + log 2) / n + P_e log |S|, (log k_2) / n) $
+  is in the helper region.
+][
+  Let $M_2 := g(Y^n)$, and for each letter let $U_i := (M_2, X^(i - 1))$.
+  In Lean, $X^(i - 1)$ is a word in $(S union {*})^n$ with $*$ in positions $j >= i$.
+
+  _Rate of the source._
+  Fano's inequality for the decoder $phi$ gives $H(X^n given f(X^n), M_2) <= log 2 + P_e n log |S|$.
+  Also $H(X^n given M_2) <= H(f(X^n)) + H(X^n given f(X^n), M_2)$, and $H(f(X^n)) <= log k_1$.
+  The chain rule gives $H(X^n given M_2) = sum_i H(X_i given U_i)$.
+
+  _Rate of the helper._
+  The chain rule gives $H(X^n, Y^n given M_2) = sum_i H(X_i, Y_i given M_2, (X, Y)^(i - 1))$.
+  Each summand is at most $H(X_i, Y_i given U_i) <= H(Y_i given U_i) + H(X_i given Y_i)$.
+  Also $H(X^n, Y^n given M_2) = H(X^n, Y^n) - H(M_2) >= sum_i (H(Y_i) + H(X_i given Y_i)) - log k_2$.
+  So $sum_i I(Y_i; U_i) <= log k_2$.
+
+  _Markov chain._
+  $U_i$ is a function of $Y_i$ and the other letters, which are independent of $(X_i, Y_i)$.
+  By the lemma on independent letters, $U_i -> Y_i -> X_i$.
+
+  _Time sharing._
+  Under the mixture with a uniform time $Q$, let $(Y, X, U) := (Y_Q, X_Q, (Q, U_Q))$, with $U$ relabeled into $[m]$.
+  The law of $(X, Y)$ is $p$, by the lemma on the entropy of a mixture.
+  By the same lemma, each entropy of $(Y, X, U)$ that contains $U$ is $log n$ plus the average over the letters.
+  So $I(U; X given Y)$ is the average of the letter terms, which are $0$.
+  Also $H(X given U) = 1 / n sum_i H(X_i given U_i)$ and $I(Y; U) = 1 / n sum_i I(Y_i; U_i)$.
+]
+
+#lemma("Monotonicity", lean: "Meat.Helper.rateRegion_mono")[
+  If $(R_1, R_2)$ is in the helper region, then so is every $(R'_1, R'_2)$ with $R'_1 >= R_1$ and $R'_2 >= R_2$.
+][
+  The conditions are upper bounds.
+]
+
+#theorem(
+  "Helper converse",
+  lean: (
+    "Meat.Helper.mem_rateRegion_of_achievable",
+    "Meat.Helper.achievableRegion_subset_closure_rateRegion",
+    "Meat.Helper.closure_achievableRegion_subset_closure_rateRegion",
+  ),
+)[
+  If $(R_1, R_2)$ is achievable, then $(R_1 + delta, R_2)$ is in the helper region for every $delta > 0$.
+  So the closure of the achievable region is a subset of the closure of the region.
+][
+  Let $epsilon := delta \/ (2 (log |S| + 1))$, so that $epsilon log |S| <= delta \/ 2$.
+  Take a code with $P_e <= epsilon$ and length $n >= 1$ so large that $log 2 \/ n <= delta \/ 2$.
+  Then $k_1, k_2 >= 1$, $log k_1 \/ n <= R_1$ and $log k_2 \/ n <= R_2$.
+  Apply the converse for one code and monotonicity, then let $delta -> 0$.
+]
+
+=== Helper achievability
+#source("Meat.Source.HelperAchievability")
+
+The direct part uses a covering codebook for the helper, random binning for the source, and a decoder that looks for a likely source sequence in the received bin.
+
+#theorem("Helper achievability", lean: "Meat.Helper.achievable_of_lt")[
+  Let $q$ be a law of $(Y, X, U)$ on $T times S times [m]$ with $U -> Y -> X$.
+  If $H(X given U) < R_1$ and $I(Y; U) < R_2$, then $(R_1, R_2)$ is achievable for the law $p$ of $(X, Y)$.
+][
+  Set $gamma := (R_1 - H(X given U)) \/ 4$ and $l := 1 - e^(-gamma)$.
+  The decoder uses the weights $w(u, x) := (1 - l) q(x given u) + l \/ |S|$, which are positive and sum to at most $1$ over $x$.
+  Let $c(u, y, x) := -log w(u, x)$, and choose $delta > 0$ with $delta <= (R_2 - I(Y; U)) \/ 4$ and $2 delta sum |c| <= gamma$.
+  For $u in [m]^n$ let
+  $ D(u) := {x in S^n : product_i w(u_i, x_i) >= e^(-n (H(X given U) + 2 gamma))}. $
+  Then $|D(u)| <= e^(n (H(X given U) + 2 gamma))$, because $sum_x product_i w(u_i, x_i) <= 1$.
+  The expected cost under $q$ is at most $H(X given U) - log(1 - l) = H(X given U) + gamma$.
+  So if $(u, y, x)$ is $2 delta$-typical, then $x in D(u)$.
+
+  Take $K := floor(e^(n R_2))$ helper codewords $u(1), dots, u(K)$ i.i.d. with law $q_U^n$, and $k := floor(e^(n R_1))$ bins.
+  The helper sends the index of the first codeword that is $delta$-typical with $y$.
+  The encoder sends a uniform random bin $beta(x)$.
+  The decoder outputs a sequence $x'$ in the received bin with $x' in D(u)$, where $u$ is the received codeword.
+  It errs only if no codeword is typical with $y$, or $x in.not D(u)$, or another sequence of $D(u)$ falls in the bin of $x$.
+  Averaged over the codebook, the binning and the source, the three error events have probability at most:
+  - $e^(-K e^(-n (I(Y; U) + delta))) + |T| \/ (4 n epsilon_c^2)$, by the strong covering lemma for $q_(Y U)$ with level $epsilon_c$;
+  - $|[m] times T| |S| \/ (4 n delta^2)$, by the Markov lemma with the channel $q(x given y)$, since $U -> Y -> X$;
+  - $|D(u)| \/ k <= e^(n (H(X given U) + 2 gamma)) \/ k$, by the bin collision bound.
+  All three tend to $0$, so for large $n$ some codebook and binning have $P_e <= epsilon$.
+]
+
+#source("Meat.Source.HelperTheorem")
+
+#theorem(
+  "Helper theorem",
+  lean: ("Meat.Helper.achievable_of_mem_rateRegion", "Meat.Helper.closure_achievableRegion_eq"),
+)[
+  If $(R_1, R_2)$ is in the helper region, $R_1 < R'_1$ and $R_2 < R'_2$, then $(R'_1, R'_2)$ is achievable.
+  The closure of the achievable region equals the closure of the helper region.
+][
+  The first statement is achievability for the law that witnesses $(R_1, R_2)$.
+  The converse gives one inclusion.
+  For a point $x$ of the region, $(x_1 + delta, x_2 + delta)$ is achievable for every $delta > 0$, and these points tend to $x$.
+]
+
+The region is not shown to be closed here, because that needs a bound on the size of $U$.
