@@ -1892,6 +1892,214 @@ Clipping the sum, not each part, keeps the power constraint for every codeword.
 
 The converse, and so the equality of the closure with the region, needs the entropy power inequality.
 
+== Dirty-paper coding
+#source("Meat.Continuous.DirtyPaper")
+
+The dirty-paper channel maps an input $x in RR$ to $Y = x + S + Z$.
+The interference $S ~ cal(N)(0, Q)$ and the noise $Z ~ cal(N)(0, N)$ are independent, and independent across channel uses.
+The encoder knows the whole interference sequence before it sends, and the decoder does not see it.
+The codewords satisfy the power constraint $P$ for every message and every interference sequence.
+Costa (1983) showed that the interference costs nothing: the capacity is the AWGN capacity $C(P, N)$, whatever $Q$ is.
+In Lean, a negative variance $Q$ is replaced by $0$, and the theorems hold for every $Q in RR$.
+
+#definition(
+  "Codes with known interference",
+  lean: (
+    "Meat.DirtyPaper.Code",
+    "Meat.DirtyPaper.Code.errorProb",
+    "Meat.DirtyPaper.Code.avgError",
+  ),
+)[
+  A code of length $n$ with $k$ messages and power $P$ is a pair $(f, g)$.
+  The encoder $f : [k] times RR^n -> RR^n$ is measurable in the interference for each message, and satisfies $sum_(i = 1)^n f(m, s)_i^2 <= n P$ for every $m$ and $s$.
+  The decoder $g : RR^n -> [k]$ is measurable.
+  The error probability of message $m$ is
+  $ lambda_m := integral cal(N)(0, N)^(times.o n) ({z : g(f(m, s) + s + z) != m}) thin d cal(N)(0, Q)^(times.o n)(s), $
+  and the average error probability is $overline(lambda) := k^(-1) sum_m lambda_m$.
+]
+
+#definition("Achievable rate", lean: "Meat.DirtyPaper.Achievable")[
+  A rate $R in RR$ is achievable for power $P$, interference $Q$ and noise $N$ if for every $epsilon > 0$ there exists $n_0 in NN$ such that for every $n >= n_0$ there exist $k in NN$ with $k >= e^(n R)$ and a code of length $n$ with $k$ messages, power $P$ and $overline(lambda) <= epsilon$.
+]
+
+#lemma(
+  "Fixing the interference",
+  lean: (
+    "Meat.DirtyPaper.Code.toAWGN",
+    "Meat.DirtyPaper.Code.exists_avgError_toAWGN_le",
+    "Meat.DirtyPaper.Achievable.awgn",
+  ),
+)[
+  For a code $(f, g)$ and $s in RR^n$, the pair $(f(dot, s), y |-> g(y + s))$ is an AWGN code with the same power.
+  Some $s$ gives an AWGN code whose average error is at most $overline(lambda)$.
+  So every rate achievable with known interference is achievable for the AWGN channel with power $P$ and noise $N$.
+][
+  The error probability of message $m$ for the AWGN code at $s$ is the inner measure in the definition of $lambda_m$.
+  The set ${(s, z) : g(f(m, s) + s + z) != m}$ is measurable, so this inner measure is measurable in $s$.
+  By Tonelli's theorem, $overline(lambda)$ is the integral over $s$ of the average error of the AWGN code at $s$.
+  A measurable function takes a value at most its integral against a probability measure at some point.
+]
+
+#theorem(
+  "Converse with known interference",
+  lean: "Meat.DirtyPaper.le_awgnCapacity_of_achievable",
+)[
+  If $P >= 0$, $N > 0$ and $R$ is achievable for $P$, $Q$ and $N$, then $R <= C(P, N)$.
+][
+  By the previous lemma, $R$ is achievable for the AWGN channel, and the AWGN converse applies.
+]
+
+#lemma("Rate zero", lean: "Meat.DirtyPaper.achievable_zero")[
+  If $P >= 0$, then $R = 0$ is achievable for every $Q$ and $N$.
+][
+  Take $k = 1$, the zero encoder and the constant decoder, which never errs.
+]
+
+#theorem(
+  "Assembly of the dirty-paper theorem",
+  lean: "Meat.DirtyPaper.closure_achievable_eq_of",
+)[
+  Let $P >= 0$ and $N > 0$.
+  Assume that every $R$ with $0 <= R < C(P, N)$ is achievable for $P$, $Q$ and $N$.
+  Then
+  $ overline({R >= 0 : R "achievable"}) = [0, C(P, N)]. $
+][
+  The converse puts the set inside $[0, C(P, N)]$.
+  The rest is as for the AWGN channel, with the lemma on rate zero.
+]
+
+#source("Meat.Continuous.DirtyPaperAchievability")
+
+Achievability reduces to a discrete channel with state, as the AWGN proof reduces to a discrete channel.
+A block of $L$ channel uses becomes one letter.
+The state of a block is a quantization of its interference, and the encoder sees only this quantized state.
+
+#definition(
+  "Block channel with state",
+  lean: (
+    "Meat.DirtyPaper.letter",
+    "Meat.DirtyPaper.stateLaw",
+    "Meat.DirtyPaper.chan",
+    "Meat.DirtyPaper.stateLaw_mul_chan",
+  ),
+)[
+  Let $Sigma$, $A$ and $B$ be finite sets, let $q_S : RR^L -> Sigma$ and $q : RR^L -> B$ be measurable, and let $a : A -> RR^L$.
+  Let $S ~ cal(N)(0, Q)^(times.o L)$ and $Z ~ cal(N)(0, N)^(times.o L)$ be independent.
+  The letter law is the law on $Sigma times B^A$ of the pair $(q_S (S), F)$ with $F(x) := q(a(x) + S + Z)$.
+  The state law $p_S$ is its first marginal.
+  The channel $W(y given x, sigma)$ is the conditional probability of $F(x) = y$ given $q_S (S) = sigma$ when $p_S (sigma) > 0$, and the law of $F(x)$ otherwise.
+  So for all $x$, $sigma$ and $y$,
+  $ p_S (sigma) W(y given x, sigma) = sum_(f : f(x) = y) P(q_S (S) = sigma, F = f). $
+]
+
+#definition(
+  "Codes from block codes",
+  lean: ("Meat.DirtyPaper.toCode", "Meat.DirtyPaper.avgError_toCode"),
+)[
+  Let $P >= 0$, $n = m L + r$, let $a$ have power $sum_l a(x)_l^2 <= L P$ for every $x$, and let $(f_0, g_0)$ be a code of length $m$ for the channel $W$ with state law $p_S$.
+  The code of length $n$ cuts $s$ into $m$ blocks of length $L$ and drops the last $r$ entries.
+  It sends $a(f_0 (i, sigma)_t)$ in block $t$, where $sigma_t := q_S$ of block $t$ of $s$, and zeros in the last $r$ entries.
+  The decoder applies $q$ to each block of $y$ and then $g_0$.
+  Its power is at most $m L P <= n P$, and its average error equals the average error of $(f_0, g_0)$.
+]
+
+The equality of errors comes from the block structure of the Gaussian laws.
+The blocks of $cal(N)(0, v)^(times.o n)$ are i.i.d. with law $cal(N)(0, v)^(times.o L)$.
+So the letters $(q_S (S_t), F_t)$ of the $m$ blocks are i.i.d. with the letter law.
+The error event depends only on these letters, and summing over the functions $F_t$ with $F_t (x_t) = y_t$ gives the product of the channel by the last identity.
+
+#theorem(
+  "Reduction to a discrete channel with state",
+  lean: "Meat.DirtyPaper.achievable_of_lt_infoCapacity_block",
+)[
+  Let $P, R >= 0$, $L >= 1$, $A$ nonempty, and let $a$ have power at most $L P$.
+  If $L R < C_"GP"$ for the block channel $W$ with state law $p_S$, then $R$ is achievable for $P$, $Q$ and $N$.
+][
+  Choose $R_1$ with $R < R_1 < C_"GP" \/ L$.
+  Gelfand-Pinsker achievability gives $n_1$ and codes of every length $m >= n_1$ with rate $L R_1$ and error at most $epsilon$.
+  Choose $m_1 > R \/ (R_1 - R)$.
+  For $n >= L max(n_1, m_1)$, let $m := floor(n \/ L)$ and $r := n - m L < L$, and use the code from the block code of length $m$.
+  Since $R <= m (R_1 - R)$, $n R <= m L R + L R <= m L R_1$, so the number of messages is at least $e^(n R)$.
+]
+
+#theorem(
+  "Dirty-paper theorem from a block quantization",
+  lean: "Meat.DirtyPaper.closure_achievable_eq_of_quantization",
+)[
+  Let $P >= 0$ and $N > 0$.
+  Assume that for every $R$ with $0 <= R < C(P, N)$ there exist $L >= 1$, finite sets $Sigma$, $A$, $B$ with $A$ nonempty, measurable $q_S$ and $q$, and $a$ of power at most $L P$, with $L R < C_"GP"$ for the block channel.
+  Then
+  $ overline({R >= 0 : R "achievable"}) = [0, C(P, N)]. $
+][
+  Combine the reduction with the assembly of the dirty-paper theorem.
+]
+
+#source("Meat.Continuous.DirtyPaperQuantization")
+
+The AWGN proof bounds the information of the quantized channel below with a test function.
+For a channel with state the objective is $I(U ; Y) - I(U ; S)$, and the same idea needs one more factor for the state.
+
+#lemma(
+  "A lower bound on the Gelfand-Pinsker objective",
+  lean: "Meat.DirtyPaper.integral_log_le_mutualInfo_sub",
+)[
+  Let $nu$ be a probability measure on $Omega$, and let $S$, $U$ and $Y$ be measurable maps into finite sets.
+  Let $g : Omega -> (0, infinity)$ be measurable with $log g$ integrable.
+  Let $Psi(u, y) >= 0$ with $sum_u Psi(u, y) <= 1$ for every $y$.
+  Assume that for all $sigma$, $u$ and $y$,
+  $ (integral_({S = sigma, U = u, Y = y}) g thin d nu) dot nu(U = u, S = sigma) <= Psi(u, y) dot nu(S = sigma, U = u, Y = y) dot nu(S = sigma). $
+  Then
+  $ integral log g thin d nu <= I(U ; Y) - I(U ; S). $
+][
+  Let $F := log p(U, Y) - log p(Y) - log p(U, S) + log p(S)$, so that $integral F thin d nu = I(U ; Y) - I(U ; S)$.
+  Let $k := g dot p(U, S) p(Y) \/ (p(S) p(U, Y))$.
+  Almost surely all four probabilities are positive, and $log g = F + log k <= F + k - 1$.
+  On the cell $(sigma, u, y)$, the assumption gives $integral k <= Psi(u, y) p(sigma, u, y) p(y) \/ p(u, y)$.
+  Summing over $sigma$ gives at most $Psi(u, y) p(y)$, then summing over $u$ and $y$ gives at most $sum_y p(y) = 1$.
+  So $integral (k - 1) thin d nu <= 0$.
+]
+
+#theorem(
+  "Costa's dirty-paper theorem",
+  lean: "Meat.DirtyPaper.closure_achievable_eq",
+)[
+  Let $P >= 0$ and $N > 0$.
+  For every $Q$,
+  $ overline({R >= 0 : R "achievable for" P, Q, N}) = [0, C(P, N)] = [0, 1/2 log(1 + P / N)]. $
+][
+  We check the assumption of the dirty-paper theorem from a block quantization.
+  Let $0 <= R < C(P, N)$, so $P > 0$.
+  By continuity, choose $0 < theta < P$ with $R < C(theta, N)$, and let $alpha := theta \/ (theta + N)$ and $s := theta N \/ (theta + N)$.
+  Costa's auxiliary is $U := T + alpha S$ with $T ~ cal(N)(0, theta)$ independent of $S$, and the input is $X := U - alpha S$.
+
+  Quantize letter by letter with $Q_n$ from the AWGN proof.
+  Let $hat(S) := Q_n (S)$.
+  The state is the vector of levels of $S$, and the output quantizer $q$ is the vector of levels of $y$.
+  The input alphabet is the set of pairs $(u, sigma)$ of level vectors, and $a(u, sigma) := "clip"_P (u \/ n - alpha sigma \/ n)$, so the power is at most $L P$.
+  On the probability space of $(T, S, Z)$, the auxiliary is the vector of levels of $T + alpha hat(S)$, and the letter is $X_l := Q_n (T_l + alpha hat(S)_l) - alpha hat(S)_l$ before clipping.
+
+  For the upper bound, take $g := product_l u_(theta, s, m_l)(T_l)$ with $m_l := alpha Q_n (Y_l) - alpha hat(S)_l$.
+  On a cell the mean $m_l$ is fixed, and $T$ ranges over a box.
+  Integrating the Gaussian ratio over that box gives $Psi(u, y) := product_l cal(N)(alpha y_l \/ n, s)(k_n^(-1)(u_l))$, and these sum to at most $1$ over $u$.
+  So the lemma gives $integral log g <= I(U ; Y) - I(U ; S)$.
+  The state has law $p_S$, and $Y$ given $(S, U, X)$ follows $W$, so the kernel form of the Gelfand-Pinsker formula gives $I(U ; Y) - I(U ; S) <= C_"GP"$.
+
+  For the lower bound, $log g$ is a sum over the letters.
+  Outside the clipping set the summands are i.i.d. with mean
+  $ J_n = 1/2 log (theta / s) + 1/2 - 1 / (2 s) bb(E) (T - M_n)^2, $
+  where $M_n := alpha Q_n (X + S + Z) - alpha hat(S)$.
+  As $n -> infinity$, $M_n -> alpha (T + Z)$, and dominated convergence gives $bb(E) (T - M_n)^2 -> (1 - alpha)^2 theta + alpha^2 N = s$.
+  So $J_n -> 1/2 log (theta \/ s) = C(theta, N)$.
+  Since $|M_n| <= 2 n$, on the clipping set each summand moves by at most $(8 n |t| + 16 n^2) \/ (2 s)$, and $|t| <= c + t^2 \/ c$.
+  With $beta$ the probability of the clipping set, this gives
+  $ integral log g >= L J_n - L ((8 n c + 16 n^2) beta + 8 n theta \/ c) / (2 s). $
+
+  Finally, $bb(E) X_l^2 -> theta < P$ by dominated convergence, and Chebyshev's inequality gives $beta <= "Var" \/ (L (P - m_n)^2)$ with $m_n := bb(E) X_l^2$.
+  Let $eta := (C(theta, N) - R) \/ 4$.
+  Choose $n$ with $J_n > R + 3 eta$ and $m_n < P$, then $c$ with $8 n theta \/ (2 s c) < eta$, then $L$ large.
+  Then $C_"GP" > L (R + eta) > L R$.
+]
+
 
 == Parallel Gaussian channels
 #source("Meat.Continuous.ParallelGaussian")
