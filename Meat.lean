@@ -107,6 +107,9 @@ import Meat.Continuous.GaussianMACAchievability
 import Meat.Continuous.GaussianBroadcast
 import Meat.Continuous.GaussianBroadcastQuantization
 import Meat.Continuous.GaussianBroadcastAchievability
+import Meat.Continuous.DirtyPaper
+import Meat.Continuous.DirtyPaperAchievability
+import Meat.Continuous.DirtyPaperQuantization
 import Meat.Testing.Stein
 import Meat.Testing.Sanov
 import Meat.Testing.Chernoff
