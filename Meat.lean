@@ -80,6 +80,11 @@ import Meat.Continuous.DifferentialEntropy
 import Meat.Continuous.Divergence
 import Meat.Continuous.Gaussian
 import Meat.Continuous.MaxEntropy
+import Meat.Continuous.HeatFlow
+import Meat.Continuous.DeBruijn
+import Meat.Continuous.Fisher
+import Meat.Continuous.Stam
+import Meat.Continuous.EPI
 import Meat.Continuous.AWGN
 import Meat.Continuous.AWGNConverse
 import Meat.Continuous.AWGNAchievability
