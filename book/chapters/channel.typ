@@ -1090,6 +1090,73 @@ The two forms are equal, because $U -> X -> Y_1$ is a Markov chain.
 If $Y_2$ is a degraded version of $Y_1$, the union of these regions over all $(p_U, p_X)$ is equal to the capacity region.
 For the general broadcast channel, the capacity region is an open problem.
 
+== Maximal error for broadcast channels
+#source("Meat.Channel.BroadcastMaxError")
+
+The achievable region of the broadcast channel is defined with the average error $overline(lambda)$.
+This section shows that the maximal error $max_m lambda_m$ gives the same region up to closure, as Willems (1990) proved.
+For a single receiver, one removes the worse half of the messages.
+For two receivers this does not work: the message set must stay a product $M_1 times M_2$, and the bad pairs can be spread so that every large product of messages contains one.
+The proof below removes bad messages of receiver 2, and puts the messages of receiver 1 into bins chosen by a counting argument.
+It uses no information theory, and the rates drop by an amount that goes to 0.
+
+#definition("Maximal-error achievability", lean: ("Meat.BC.MaxAchievable", "Meat.BC.maxAchievableRegion"))[
+  A pair $(R_1, R_2)$ is achievable with maximal error if for every $epsilon > 0$ there is $N$ such that for all $n >= N$ there are $k_1 >= e^(n R_1)$, $k_2 >= e^(n R_2)$ and a broadcast code of length $n$ with message sets $[k_1]$ and $[k_2]$ and $lambda_m <= epsilon$ for every $m$.
+  The maximal-error region $cal(A)_max (W)$ is the set of such pairs in $[0, infinity)^2$.
+]
+
+#lemma(
+  "Maximal error bounds average error",
+  lean: ("Meat.BC.avgError_le_of_forall_errorProb_le", "Meat.BC.maxAchievableRegion_subset"),
+)[
+  If $lambda_m <= epsilon$ for every $m$, then $overline(lambda) <= epsilon$.
+  So $cal(A)_max (W) subset.eq cal(A)(W)$.
+][
+  The average of numbers at most $epsilon$ is at most $epsilon$.
+]
+
+#theorem("From average to maximal error", lean: "Meat.BC.maxAchievable_of_achievable")[
+  Let $(R_1, R_2)$ be achievable with $R_1, R_2 >= 0$.
+  Let $0 <= R'_j$ with $R'_j < R_j$ or $R'_j = 0$, for $j = 1, 2$.
+  Then $(R'_1, R'_2)$ is achievable with maximal error.
+][
+  Let $epsilon_0 := min(epsilon, 1) slash 4$, and take a code with $k_j >= e^(n R_j)$ messages and $overline(lambda) <= epsilon_0$.
+  Write $e(a, b) := lambda_((a, b))$, and call a pair bad if $e(a, b) > t := 4 epsilon_0$.
+  By Markov's inequality at most $k_1 k_2 slash 4$ pairs are bad.
+
+  _Columns._
+  Call a message $b$ of receiver 2 good if at most half of the pairs $(a, b)$ are bad.
+  Each other column has more than $k_1 slash 2$ bad pairs, so fewer than $k_2 slash 2$ columns are not good.
+  Keep $g := ceil(e^(n R'_2))$ good columns, through an injection $iota : [g] -> [k_2]$.
+  For large $n$ there are enough: if $R'_2 < R_2$ then $2 g <= e^(n R_2) + 1$, and if $R'_2 = 0$ then $g = 1$.
+
+  _Bins._
+  Let $K := ceil(e^(n R'_1))$, and let $G_j$ be the set of $a$ with $e(a, iota(j)) <= t$, so $|G_j| >= s := ceil(k_1 slash 2)$.
+  A map $beta : [k_1] -> [K]$ is bad for $(i, j)$ if $beta(a) != i$ for all $a in G_j$.
+  There are $(K - 1)^(|G_j|) K^(k_1 - |G_j|)$ such maps, so if
+  $ K g (1 - 1 slash K)^s < 1, $
+  then some $beta$ is bad for no $(i, j)$: every bin $beta^(-1)(i)$ meets every $G_j$.
+  If $R'_1 = 0$, then $K = 1$ and the left side is 0.
+  If $R'_1 < R_1$, then $(1 - 1 slash K)^s <= e^(-s slash K) <= exp(-e^(n (R_1 - R'_1)) slash 4)$, while $K g <= 4 e^(n (R'_1 + R'_2))$.
+  The double exponential wins for large $n$, since $e^x >= x^2 slash 2$.
+
+  _The new code._
+  For $(i, j)$ pick $a(i, j) in G_j$ with $beta(a(i, j)) = i$, and send the old codeword of $(a(i, j), iota(j))$.
+  Receiver 1 outputs the bin of the old decision, and receiver 2 inverts $iota$ on the old decision.
+  Whenever both old decisions are right, both new decisions are right, so the new error at $(i, j)$ is at most $e(a(i, j), iota(j)) <= t <= epsilon$.
+]
+
+#theorem("Maximal and average error agree", lean: "Meat.BC.closure_maxAchievableRegion_eq")[
+  For every broadcast channel $W$,
+  $ overline(cal(A)_max (W)) = overline(cal(A)(W)). $
+][
+  The inclusion $subset.eq$ is the lemma.
+  For $(R_1, R_2) in cal(A)(W)$ and $delta > 0$, let $R'_j := max(0, R_j - delta slash 2)$.
+  Then $R'_j < R_j$ or $R'_j = 0$, so $(R'_1, R'_2) in cal(A)_max (W)$ by the theorem, and $|R_j - R'_j| < delta$.
+]
+
+So every capacity result for the broadcast channel in this book, such as the degraded, less noisy and more capable cases, holds also with maximal error.
+
 == Feedback
 #source("Meat.Channel.Feedback")
 
