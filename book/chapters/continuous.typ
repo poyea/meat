@@ -618,7 +618,7 @@ The integrability hypothesis on $nu * rho$ cannot be dropped, because the Bochne
   Its Gaussian case is the statement: for every probability measure $nu$ with a density, finite second moment and $eta$ of its density integrable, and every $v > 0$,
   $ e^(2 h(nu * cal(N)(0, v))) >= e^(2 h(nu)) + 2 pi e v. $
   The Gaussian case is proved below.
-  The general case is still a proposition here.
+  The general case is proved in the section on the entropy power inequality in general.
 ]
 
 #lemma(
@@ -818,9 +818,72 @@ With $rho$ a point mass at $0$ this is the entropy power inequality with a Gauss
   Apply the previous theorem, and use $h(rho) <= h(rho * cal(N)(0, v))$, since adding independent noise increases differential entropy.
 ]
 
-The unconditional entropy power inequality would follow from this corollary if $h(nu * rho * cal(N)(0, v)) -> h(nu * rho)$ as $v -> 0$.
-The lower bound $h(nu * rho) <= h(nu * rho * cal(N)(0, v))$ holds, but the upper bound needs the lower semicontinuity of relative entropy under weak convergence.
-That is not yet formalized, so the general case is still open here.
+The unconditional entropy power inequality follows from this corollary once $h(nu * rho * cal(N)(0, v)) -> h(nu * rho)$ as $v -> 0$.
+The lower bound $h(nu * rho) <= h(nu * rho * cal(N)(0, v))$ is the noise theorem.
+The next section proves the upper bound.
+
+
+== The entropy power inequality in general
+#source("Meat.Continuous.EPIThree")
+
+The last step removes the Gaussian smoothing.
+For that we need $h(mu * cal(N)(0, v)) -> h(mu)$ as $v -> 0$.
+Adding noise only increases entropy, so the hard part is the upper bound.
+
+#theorem(
+  "Entropy is upper semicontinuous under Gaussian smoothing",
+  lean: "Meat.le_measureDiffEntropy_of_le_conv_gaussianReal",
+)[
+  Let $mu$ be a probability measure on $RR$ with $mu << lambda$, finite second moment, and $eta compose (d mu \/ d lambda)$ integrable.
+  Let $c in RR$ with $c <= h(mu * cal(N)(0, v))$ for every $v > 0$.
+  Then $c <= h(mu)$.
+][
+  Let $f := d mu \/ d lambda$, $M := integral y^2 thin d mu(y)$ and $v_n := 1 \/ (n + 1)$.
+  Write $p_s := f * k_s$ for the heat density of $mu$ at time $s$, and $phi := k_1$ for the standard normal density.
+
+  First, $p_(v_n) -> f$ in $L^1$.
+  Choose $g$ continuous with compact support and $norm(f - g)_1 <= epsilon$.
+  Convolution with $k_s$ does not increase the $L^1$ norm, so
+  $ norm(p_s - f)_1 <= norm((f - g) * k_s)_1 + norm(g * k_s - g)_1 + norm(g - f)_1 <= 2 epsilon + integral k_s (z) omega(z) thin d z, $
+  where $omega(z) := integral abs(g(x - z) - g(x)) thin d x$.
+  By dominated convergence $omega(z) -> 0$ as $z -> 0$, and $omega <= 2 norm(g)_1$.
+  So $omega(z) <= epsilon + 2 norm(g)_1 z^2 \/ delta^2$ for some $delta > 0$, and
+  $ integral k_s (z) omega(z) thin d z <= epsilon + 2 norm(g)_1 s \/ delta^2, $
+  since $integral z^2 k_s (z) thin d z = s$.
+  Convergence in $L^1$ gives convergence in measure, so a subsequence $p_(v_(n_k))$ tends to $f$ almost everywhere.
+
+  Next, use the nonnegative integrand
+  $ G(x, t) := t log t - t log phi(x) - t + phi(x) >= 0, $
+  which is $phi Lambda(t \/ phi)$ with $Lambda(r) = r log r - r + 1 >= 0$.
+  Since $-log phi(x) = x^2 \/ 2 + 1/2 log(2 pi)$, a density $q$ of a measure with second moment $M_q$ has
+  $ integral G(x, q(x)) thin d x = -h(q) + M_q \/ 2 + 1/2 log(2 pi). $
+  The density of $mu * cal(N)(0, s)$ is $p_s$, with second moment $M + s$, so
+  $ integral G(x, p_s (x)) thin d x <= -c + (M + s) / 2 + 1/2 log(2 pi). $
+  The map $t |-> G(x, t)$ is continuous, so $G(x, p_(v_(n_k))(x)) -> G(x, f(x))$ almost everywhere.
+  Fatou's lemma gives
+  $ -h(mu) + M / 2 + 1/2 log(2 pi) = integral G(x, f(x)) thin d x <= liminf_k integral G(x, p_(v_(n_k))(x)) thin d x <= -c + M / 2 + 1/2 log(2 pi). $
+]
+
+The argument is the lower semicontinuity of $D(dot || cal(N)(0, 1))$ along this one family.
+It needs no general weak convergence theory, only $L^1$ convergence of the Gaussian smoothing and Fatou's lemma.
+
+#theorem(
+  "Entropy power inequality",
+  lean: "Meat.entropyPowerInequality",
+)[
+  Let $nu, rho$ be probability measures on $RR$ with densities and finite second moments.
+  Assume that $eta$ of the densities of $nu$, $rho$ and $nu * rho$ is integrable.
+  Then
+  $ e^(2 h(nu)) + e^(2 h(rho)) <= e^(2 h(nu * rho)). $
+  Equivalently, $N(nu) + N(rho) <= N(nu * rho)$.
+][
+  The measure $nu * rho$ has a density, since $nu$ does, and it has finite second moment.
+  Let $A := e^(2 h(nu)) + e^(2 h(rho))$.
+  For every $v > 0$, the entropy power inequality up to a small Gaussian gives $A <= e^(2 h((nu * rho) * cal(N)(0, v)))$, that is, $1/2 log A <= h((nu * rho) * cal(N)(0, v))$.
+  The previous theorem with $mu = nu * rho$ and $c = 1/2 log A$ gives $1/2 log A <= h(nu * rho)$.
+]
+
+This proves the proposition `EntropyPowerInequality` stated earlier in this chapter, with no extra hypothesis.
 
 
 == The AWGN channel
