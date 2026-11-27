@@ -398,6 +398,79 @@ The helper lemmas are private.
 The bound has $overline(cal(O)(W))$ on the right, not $cal(O)(W)$.
 The union $cal(O)(W)$ is closed once the auxiliary alphabets can be bounded, and that cardinality bound is not in Lean.
 
+== The UVW outer bound
+#source("Meat.Open.BroadcastUVW")
+
+The proof of the UV outer bound uses the step $I(M_2; S_i given U_i) <= I(X_i; S_i given U_i)$.
+This section keeps the messages as two independent auxiliary variables and the pair $(D_i, F_i)$ as a third one.
+The result is an outer bound with three auxiliary variables $U$, $V$ and $T$, where $U$ and $V$ are independent.
+The helper lemmas are private.
+
+#definition("UVW outer bound", lean: ("Meat.BC.uvwLaw", "Meat.BC.uvwRegionOf", "Meat.BC.uvwRegion"))[
+  Let $U$, $V$ and $T$ be finite sets, $p_U in Delta(U)$, $p_V in Delta(V)$, $p_T : U times V -> Delta(T)$ and $p_X : U times V times T -> Delta(A)$.
+  The law $p_U (u) p_V (v) p_T (t given u, v)$ on $(U times V) times T$ is the UVW law.
+  Let $(U, V, T, X, Y_1, Y_2)$ have the law $p_U (u) p_V (v) p_T (t given u, v) p_X (x given u, v, t) W(y_1, y_2 given x)$.
+  The region $cal(O)_3 (p_U, p_V, p_T, p_X)$ is the set of $(R_1, R_2) in [0, infinity)^2$ with
+  $ R_1 <= I(U, T; Y_1), quad R_2 <= I(V, T; Y_2), $
+  $ R_1 + R_2 <= I(U, T; Y_1) + I(V; Y_2 given U, T), quad R_1 + R_2 <= I(V, T; Y_2) + I(U; Y_1 given V, T). $
+  The UVW outer bound $cal(O)_3 (W)$ is the union of these regions over all $k_1, k_2, k_3 in NN$ with $U = [k_1]$, $V = [k_2]$ and $T = [k_3]$.
+]
+
+With the auxiliary variables $(U, T)$ and $(V, T)$, each point of $cal(O)_3 (W)$ is in $cal(O)(W)$.
+The reason is $I(V; Y_2 given U, T) <= I(X; Y_2 given U, T)$, since $(U, V, T) -> X -> Y_2$.
+This inclusion is not in Lean.
+
+#lemma(
+  "Laws of the UVW bound",
+  lean: ("Meat.BC.uvwLaw_map_equiv", "Meat.BC.uvwRegionOf_map_equiv", "Meat.BC.exists_uvwLaw_eq"),
+)[
+  Let $e_1$, $e_2$ and $e_3$ be bijections of $U$, $V$ and $T$.
+  The UVW law of the push-forwards $e_(1 *) p_U$ and $e_(2 *) p_V$, with the kernel $p_T$ relabeled by $e_1^(-1)$, $e_2^(-1)$ and $e_3$, is the push-forward of the UVW law by $e_1 times e_2 times e_3$.
+  So relabeling the three sets does not change $cal(O)_3 (p_U, p_V, p_T, p_X)$.
+  Let $sigma$ be a law of $((U, V, T), X, Y_1, Y_2)$ of the form $sigma(u, v, t, x) W(y_1, y_2 given x)$, whose marginal on $U times V$ is $p_U times p_V$.
+  Then $sigma$ is the joint law of some $p_T$ and $p_X$ with $p_U$ and $p_V$.
+][
+  The first statement is a computation with binds.
+  For the second, information under a push-forward is information of the composed variables, and entropy is invariant under injective maps.
+  For the third, the lemma on laws with a channel factor writes $sigma$ as a law $p_0 (u, v, t) p_X (x given u, v, t) W(y_1, y_2 given x)$.
+  Split $p_0$ as its marginal on $U times V$ times a kernel $p_T (t given u, v)$, where $p_T$ is any law when the marginal is $0$.
+  That marginal is $p_U times p_V$ by hypothesis.
+]
+
+#theorem(
+  "UVW outer bound",
+  lean: ("Meat.BC.achievableRegion_subset_closure_uvwRegion", "Meat.BC.closure_achievableRegion_subset_uvwRegion"),
+)[
+  For every broadcast channel $W$,
+  $ cal(A)(W) subset.eq overline(cal(O)_3 (W)), quad overline(cal(A)(W)) subset.eq overline(cal(O)_3 (W)). $
+][
+  The setup is the one of the UV outer bound: a code of length $n$ with average error $overline(lambda)$ and $k_j >= e^(n R_j)$ messages, its twin block code, and the four Fano bounds with $x_j := (1 - 2 overline(lambda)) log k_j - log 2$.
+  As there, $D_i := Y_1^(i - 1)$, $F_i := (Y_(2, i + 1), dots, Y_(2, n))$, $T_i := Y_(1, i)$ and $S_i := Y_(2, i)$.
+  Let $Z_i$ be the word in $(B_1 times B_2)^n$ that holds $(D_i, F_i)$.
+
+  _Chain rule._
+  The chain rule forwards and the bound $I(M_1; T_i given D_i) + I(F_i; T_i given M_1, D_i) <= I(M_1, Z_i; T_i)$ give
+  $ I(M_1; Y_1^n) <= sum_i I(M_1, Z_i; Y_(1, i)). $
+  For each $i$, two applications of the chain rule give
+  $ I(M_2; S_i given M_1, F_i) <= I(D_i; S_i given M_1, F_i) + I(M_2; S_i given M_1, Z_i). $
+  No step through $X_i$ is needed here.
+
+  _Csiszár sum identity._
+  With $M_1$ as the common conditioning variable, the two sums of cross terms cancel as in the UV outer bound, and
+  $ I(M_1; Y_1^n) + I(M_2; Y_2^n given M_1) <= sum_i (I(M_1, Z_i; Y_(1, i)) + I(M_2; Y_(2, i) given M_1, Z_i)). $
+  The same argument with $M_2$ in place of $M_1$ gives the other sum bound, and $I(M_2; Y_2^n) <= sum_i I(M_2, Z_i; Y_(2, i))$.
+
+  _Time sharing._
+  The law $L_i$ of $((M_1, M_2, Z_i), X_i, Y_(1, i), Y_(2, i))$ is memoryless, and its marginal on the messages is uniform on $[k_1] times [k_2]$.
+  Mix the laws $L_i$ with a uniform $Q$, and take $U := M_1$, $V := M_2$ and $T := (Q, Z_Q)$.
+  The mixture is memoryless and its marginal on $(U, V)$ is still the product of two uniform laws.
+  By the lemma on laws of the UVW bound, it is the joint law of some $p_T$ and $p_X$.
+  By the mixture lemma, $I(V; Y_2 given U, T)$ and $I(U; Y_1 given V, T)$ are the averages over $i$, and $I(U, T; Y_1)$ and $I(V, T; Y_2)$ are at least the averages.
+  With $r_j := max(0, (1 - 2 overline(lambda)) R_j - log 2 / n)$, this puts $(r_1, r_2)$ in $cal(O)_3 (p_U, p_V, p_T, p_X)$, and relabeling puts the sets in the form $[k]$.
+  As in the UV outer bound, $|R_j - r_j| < delta$ for a good code with large $n$.
+  The second inclusion follows because the closure of $cal(O)_3 (W)$ is closed.
+]
+
 
 == Relay channels
 #source("Meat.Open.Relay")
