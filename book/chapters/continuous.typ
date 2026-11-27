@@ -2181,6 +2181,132 @@ For this, the gain uses the Gaussian posterior for the noise variance $theta_1 +
 ]
 
 
+== The Gaussian interference channel
+#source("Meat.Continuous.GaussianInterference")
+
+The two-user Gaussian interference channel with gains $a, b in RR$ maps inputs $x_1, x_2 in RR$ to
+$ Y_1 = x_1 + a x_2 + Z_1, quad Y_2 = b x_1 + x_2 + Z_2, $
+with $Z_1, Z_2 ~ cal(N)(0, N)$ independent of each other and across channel uses.
+Receiver $j$ decodes only message $j$.
+The interference is strong when $a^2 >= 1$ and $b^2 >= 1$: each receiver hears the other user at least as well as the intended receiver does.
+
+#definition(
+  "Codes and achievable pairs",
+  lean: (
+    "Meat.GaussianIC.Code",
+    "Meat.GaussianIC.Code.errorProb",
+    "Meat.GaussianIC.Code.avgError",
+    "Meat.GaussianIC.Achievable",
+    "Meat.GaussianIC.achievableRegion",
+  ),
+)[
+  A code of length $n$ with $k_1$ and $k_2$ messages and powers $P_1, P_2$ has encoders $f_j : [k_j] -> RR^n$ with $sum_i f_j (m)_i^2 <= n P_j$ and measurable decoders $g_j : RR^n -> [k_j]$.
+  The error probability of $(m_1, m_2)$ is
+  $ lambda_(m_1 m_2) := (cal(N)(0, N)^(times.o n) times.o cal(N)(0, N)^(times.o n)) ({(z_1, z_2) : g_1 (f_1 (m_1) + a f_2 (m_2) + z_1) != m_1 or g_2 (b f_1 (m_1) + f_2 (m_2) + z_2) != m_2}), $
+  and $overline(lambda) := (k_1 k_2)^(-1) sum lambda_(m_1 m_2)$.
+  Achievable pairs are defined as for the multiple access channel, and the achievable region is the set of achievable pairs $(R_1, R_2) >= 0$.
+]
+
+#lemma(
+  "Swapping the users",
+  lean: (
+    "Meat.GaussianIC.Code.swap",
+    "Meat.GaussianIC.Code.errorProb_swap",
+    "Meat.GaussianIC.Code.avgError_swap",
+    "Meat.GaussianIC.Achievable.swap",
+  ),
+)[
+  Exchanging the encoders and the decoders gives a code for powers $(P_2, P_1)$ and gains $(b, a)$ with the same error probabilities.
+  So $(R_1, R_2)$ is achievable for $(P_1, P_2, a, b)$ if and only if $(R_2, R_1)$ is achievable for $(P_2, P_1, b, a)$.
+][
+  The product of the two noise laws is invariant under exchanging the factors.
+]
+
+#lemma(
+  "Each receiver alone",
+  lean: ("Meat.GaussianIC.Code.noise_le_errorProb₁", "Meat.GaussianIC.Code.noise_le_errorProb₂"),
+)[
+  The probability that $g_j$ errs at $(m_1, m_2)$ is at most $lambda_(m_1 m_2)$.
+][
+  The event of receiver $1$ is a cylinder ${z_1 : dots} times RR^n$ inside the error event, and the second noise law has mass $1$.
+]
+
+#definition(
+  "Strong interference region",
+  lean: "Meat.GaussianIC.strongRegion",
+)[
+  The set of $(R_1, R_2) >= 0$ with $R_1 <= C(P_1, N)$, $R_2 <= C(P_2, N)$ and
+  $ R_1 + R_2 <= min(C(P_1 + a^2 P_2, N), C(b^2 P_1 + P_2, N)). $
+  It is the intersection of the Gaussian multiple access regions of the two receivers.
+]
+
+#lemma(
+  "Splitting Gaussian noise",
+  lean: "Meat.GaussianIC.map_noise_smul_add",
+)[
+  Let $V_1, V_2 >= 0$ and $c in RR$.
+  If $Z ~ cal(N)(0, V_1)^(times.o n)$ and $Z' ~ cal(N)(0, V_2)^(times.o n)$ are independent, then $c Z + Z' ~ cal(N)(0, c^2 V_1 + V_2)^(times.o n)$.
+][
+  Regroup the pair of product measures as a product over coordinates of pairs.
+  In each coordinate, $c Z_i ~ cal(N)(0, c^2 V_1)$, and the convolution of two centered Gaussians is the centered Gaussian with the sum of the variances.
+]
+
+#theorem(
+  "Receiver 1 can decode both messages",
+  lean: "Meat.GaussianIC.Achievable.gaussianMAC",
+)[
+  Let $N > 0$ and $a^2 >= 1$.
+  If $(R_1, R_2)$ is achievable for the interference channel, then it is achievable for the Gaussian multiple access channel with powers $(P_1, a^2 P_2)$ and noise $N$.
+][
+  Take an interference code with $overline(lambda) <= epsilon \/ 2$, and let $M := N - N \/ a^2 >= 0$.
+  For $z' in RR^n$, use the encoders $f_1$ and $a f_2$, and decode $y$ by $hat(m)_1 := g_1 (y)$ and
+  $ hat(m)_2 := g_2 (b f_1 (hat(m)_1) + a^(-1) (y - f_1 (hat(m)_1)) + z'). $
+  If $hat(m)_1 = m_1$, the argument of $g_2$ is $b f_1 (m_1) + f_2 (m_2) + a^(-1) Z_1 + z'$.
+  So the error at $(m_1, m_2)$ is at most the error of $g_1$ plus the probability that $g_2$ errs on this argument.
+  Average over $z' ~ cal(N)(0, M)^(times.o n)$: by the splitting lemma, $a^(-1) Z_1 + Z'$ has the law $cal(N)(0, N)^(times.o n)$ of $Z_2$, so the average of the second term is the error probability of receiver $2$.
+  Hence the average over $z'$ of the total error is at most $2 sum lambda_(m_1 m_2)$, and some $z'$ does at least as well as the average.
+  Its code has average error at most $2 overline(lambda) <= epsilon$.
+]
+
+The decoder adds artificial noise: receiver $1$ hears user $2$ through a less noisy channel than receiver $2$ does, so it can simulate receiver $2$.
+The noise is then fixed to a good value, so the code stays deterministic.
+
+#theorem(
+  "Converse under strong interference",
+  lean: ("Meat.GaussianIC.Achievable.mem_strongRegion", "Meat.GaussianIC.closure_achievableRegion_subset_strongRegion"),
+)[
+  Let $P_1, P_2 >= 0$, $N > 0$, $a^2 >= 1$ and $b^2 >= 1$.
+  Every achievable pair $(R_1, R_2) >= 0$ lies in the strong interference region, and so does the closure of the achievable region.
+][
+  The previous theorem and the converse for the Gaussian multiple access channel give $R_1 <= C(P_1, N)$ and $R_1 + R_2 <= C(P_1 + a^2 P_2, N)$.
+  Swap the users and use $b^2 >= 1$ for the other two inequalities.
+  The region is closed.
+]
+
+#lemma(
+  "Codes for the multiple access channel",
+  lean: ("Meat.GaussianIC.ofMACCode", "Meat.GaussianIC.errorProb_ofMACCode_le", "Meat.GaussianIC.achievable_of_gaussianMAC"),
+)[
+  For unit gains $a = b = 1$, both receivers see $x_1 + x_2$ plus noise.
+  A code for the Gaussian multiple access channel with decoder $g$ gives an interference code with decoders $g_1 := g_dot.1$ and $g_2 := g_dot.2$ and $lambda_(m_1 m_2) <= 2 lambda^"MAC"_(m_1 m_2)$.
+  So every pair achievable for the multiple access channel is achievable for the interference channel with $a = b = 1$.
+][
+  The union bound over the two receivers; each receiver errs only if the multiple access decoder errs on its own noise.
+]
+
+#theorem(
+  "Capacity region with unit gains",
+  lean: ("Meat.GaussianIC.strongRegion_one_one", "Meat.GaussianIC.closure_achievableRegion_one_one"),
+)[
+  For $a = b = 1$ the strong interference region is the Gaussian multiple access region, and if $P_1, P_2 >= 0$ and $N > 0$, the closure of the achievable region equals it.
+][
+  The converse under strong interference gives one inclusion.
+  The previous lemma and the Gaussian multiple access coding theorem give the other.
+]
+
+For general gains with $a^2, b^2 >= 1$, the matching achievability needs one codebook that is good for both receivers, that is, random coding for the compound multiple access channel.
+The discrete version is the strong interference theorem; the Gaussian version would need the quantization argument of the Gaussian multiple access channel with a gain on one user, and is not formalized.
+
 == The degraded Gaussian broadcast channel
 #source("Meat.Continuous.GaussianBroadcast")
 
