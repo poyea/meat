@@ -40,6 +40,10 @@ import Meat.Source.WynerZiv
 import Meat.Source.WynerZivEncoder
 import Meat.Source.WynerZivAchievability
 import Meat.Source.WynerZivTheorem
+import Meat.Source.TimeSharing
+import Meat.Source.Helper
+import Meat.Source.HelperAchievability
+import Meat.Source.HelperTheorem
 import Meat.Channel.Basic
 import Meat.Channel.Achievability
 import Meat.Channel.Converse
