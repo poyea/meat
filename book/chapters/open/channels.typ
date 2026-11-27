@@ -398,6 +398,96 @@ The helper lemmas are private.
 The bound has $overline(cal(O)(W))$ on the right, not $cal(O)(W)$.
 The union $cal(O)(W)$ is closed once the auxiliary alphabets can be bounded, and that cardinality bound is not in Lean.
 
+== Less noisy and more capable broadcast channels
+#source("Meat.Channel.BroadcastLessNoisy")
+
+This section proves the capacity region of the less noisy broadcast channel (Körner and Marton, 1977) and of the more capable broadcast channel (El Gamal, 1979).
+In both cases the superposition region is the capacity region, as for degraded channels.
+The converse does not repeat a multi-letter argument.
+It starts from the UV outer bound of the last section, and shows that for a more capable channel every point of $cal(O)(W)$ lies in $cal(S)(W)$.
+Less noisy channels are more capable, so their region follows.
+Let $W_1$ and $W_2$ be the marginal channels of $W$.
+All sets are finite, and the helper lemmas are private.
+
+#definition("More capable and less noisy", lean: ("Meat.BC.IsMoreCapable", "Meat.BC.IsLessNoisy"))[
+  The channel $W$ is more capable if $I(X; Y_2) <= I(X; Y_1)$ for every $p in Delta(A)$, where $(X, Y_1, Y_2)$ has the law $p(x) W(y_1, y_2 given x)$.
+  The channel $W$ is less noisy if $I(U; Y_2) <= I(U; Y_1)$ for all $k in NN$, $p_U in Delta([k])$ and $p_X : [k] -> Delta(A)$, where $(U, X, Y_1, Y_2)$ has the law $p_U (u) p_X (x given u) W(y_1, y_2 given x)$.
+]
+
+In Lean, $I(X; Y_j)$ is the input mutual information of $W_j$ at $p$, and $I(U; Y_j)$ is the input mutual information at $p_U$ of the cloud channel $u |-> sum_x p_X (x given u) W_j (dot given x)$.
+In both definitions receiver 1 is the stronger receiver, as in the superposition region, where receiver 1 decodes both messages.
+A degraded channel is less noisy, by data processing.
+
+#lemma("Less noisy implies more capable", lean: "Meat.BC.IsLessNoisy.isMoreCapable")[
+  If $W$ is less noisy, then $W$ is more capable.
+][
+  Given $p in Delta(A)$, take $k = |A|$, a bijection $e : A -> [k]$, $p_U := p compose e^(-1)$ and $p_X (dot given u) := delta_(e^(-1)(u))$.
+  Then $U = e(X)$, and the cloud channel at $u$ is $W_j (dot given e^(-1)(u))$.
+  Relabeling the input by the bijection $e$ does not change mutual information, so $I(U; Y_j) = I(X; Y_j)$.
+]
+
+#theorem("The El Gamal form of the superposition region", lean: "Meat.BC.mem_superpositionUnion_of_le")[
+  Let $V$ be a finite set, $p_U in Delta(V)$ and $p_X : V -> Delta(A)$, and let $(U, X, Y_1, Y_2)$ have the law $p_U (u) p_X (x given u) W(y_1, y_2 given x)$.
+  If $R_1, R_2 >= 0$ and
+  $ R_2 <= I(U; Y_2), quad R_1 + R_2 <= I(U; Y_2) + I(X; Y_1 given U), quad R_1 + R_2 <= I(X; Y_1), $
+  then $(R_1, R_2) in cal(S)(W)$.
+][
+  Write $a := I(U; Y_2)$, $b := I(X; Y_1 given U)$ and $c := I(X; Y_1)$.
+  The channel is memoryless, so $U -> X -> Y_1$, and the chain rule gives $I(U; Y_1) + b = c$.
+  So $b <= c$.
+  If $R_1 <= b$, then $(R_1, R_2) in cal(S)(p_U, p_X)$.
+
+  Otherwise use time sharing with a coin.
+  For $lambda in [0, 1]$ let $Q in {0, 1}$ be independent of $U$ with $P(Q = 1) = lambda$.
+  Given $Q = 1$, let $X$ have the law $p_X (dot given U)$, and given $Q = 0$ let $X$ have the law $p := sum_u p_U (u) p_X (dot given u)$.
+  The new auxiliary variable is $U' := (Q, U)$.
+  The law of $X$ is still $p$, so $I(X; Y_1)$ is still $c$.
+  Conditional mutual information given $U'$ is the average over the values of $U'$ of the mutual information of $W_1$ at the conditional input law, so
+  $ I(X; Y_1 given U') = lambda b + (1 - lambda) c. $
+  By the chain rule, $I(U'; Y_2) >= I(U; Y_2 given Q) >= lambda a$.
+
+  If $a = 0$, then $R_2 = 0$; take $lambda = 0$, and $R_1 <= c$.
+  If $a > 0$, take $lambda := R_2 / a in [0, 1]$, so that $R_2 = lambda a <= I(U'; Y_2)$.
+  It remains to show $R_1 <= lambda b + (1 - lambda) c$, that is, $a R_1 + R_2 (c - b) <= a c$.
+  If $a + b <= c$, use $R_2 <= a + b - R_1$:
+  $ a R_1 + R_2 (c - b) - a c <= (R_1 - b)(a + b - c) <= 0. $
+  If $a + b >= c$, use $R_2 <= c - R_1$:
+  $ a R_1 + R_2 (c - b) - a c <= (R_1 - c)(a + b - c) <= 0. $
+  The sum rate bound holds since $I(X; Y_1)$ did not change.
+  Relabeling puts $U'$ in the form $[k]$.
+]
+
+#theorem("The UV outer bound collapses", lean: "Meat.BC.uvRegion_subset_superpositionUnion")[
+  If $W$ is more capable, then $cal(O)(W) subset.eq cal(S)(W)$.
+][
+  Let $(R_1, R_2) in cal(O)(q, p_X)$, with auxiliary variables $(U, V)$.
+  The pair $(V, X, Y_1, Y_2)$ is again a superposition law: its law is the law of $(V, X)$ times $W$.
+  The same holds for $(U, X, Y_1, Y_2)$.
+  The second and fourth bounds of $cal(O)(q, p_X)$ are the first two bounds of the last theorem with $V$ as the auxiliary variable.
+
+  For the sum rate, average the more capable condition over $U$.
+  Conditional mutual information given $U$ is $I(X; Y_j given U) = sum_u q(u) I_(p_X (dot given u)) (X; Y_j)$, so $I(X; Y_2 given U) <= I(X; Y_1 given U)$.
+  With the chain rule $I(U; Y_1) + I(X; Y_1 given U) = I(X; Y_1)$, the third bound of $cal(O)(q, p_X)$ gives
+  $ R_1 + R_2 <= I(U; Y_1) + I(X; Y_2 given U) <= I(X; Y_1). $
+  The last theorem finishes.
+]
+
+#theorem(
+  "Capacity region of more capable and less noisy broadcast channels",
+  lean: ("Meat.BC.closure_achievableRegion_eq_of_isMoreCapable", "Meat.BC.closure_achievableRegion_eq_of_isLessNoisy"),
+)[
+  If $W$ is more capable, or less noisy, then
+  $ overline(cal(A)(W)) = overline(cal(S)(W)). $
+][
+  The UV outer bound gives $overline(cal(A)(W)) subset.eq overline(cal(O)(W))$, and the last theorem gives $overline(cal(O)(W)) subset.eq overline(cal(S)(W))$.
+  The other inclusion is the superposition inner bound.
+  A less noisy channel is more capable.
+]
+
+The textbook converse for less noisy channels uses the auxiliary variable $U_i = (M_2, Y_1^(i - 1))$ and the Csiszár sum identity.
+Here the Csiszár sum identity enters only through the UV outer bound.
+For more capable channels the textbook region is stated in the El Gamal form of the theorem above, which is why that theorem is needed.
+
 == The UVW outer bound
 #source("Meat.Open.BroadcastUVW")
 
