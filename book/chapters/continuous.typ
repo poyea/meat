@@ -886,6 +886,378 @@ It needs no general weak convergence theory, only $L^1$ convergence of the Gauss
 This proves the proposition `EntropyPowerInequality` stated earlier in this chapter, with no extra hypothesis.
 
 
+== The heat flow in several dimensions
+#source("Meat.Continuous.HeatFlowVec")
+
+In this section and the next three, $n$ is a natural number and measures live on $RR^n$, written as functions $"Fin" n -> RR$ with the product Lebesgue measure.
+Write $|u|^2 := sum_i u_i^2$.
+The heat flow runs coordinatewise, so most statements reduce to the scalar ones.
+
+#definition(
+  "Heat kernel in n dimensions",
+  lean: ("Meat.heatKernelVec", "Meat.heatKernelVec_pos", "Meat.continuous_heatKernelVec", "Meat.heatKernelVec_le", "Meat.heatKernelVec_le_const", "Meat.heatKernelVec_update", "Meat.update_sub_eq"),
+)[
+  For $s in RR$ and $u in RR^n$,
+  $ K_s (u) := product_i k_s (u_i). $
+  For $s > 0$, $K_s$ is positive and continuous, $K_s <= (2 pi s)^(-n/2)$, and for $0 < a <= s <= b$,
+  $ K_s (u) <= (2 pi a)^(-n/2) e^(-|u|^2 / (2 b)). $
+  Changing one coordinate $u_i$ to $r$ changes one factor: $K_s (u[i := r]) = k_s (r) product_(j != i) k_s (u_j)$.
+][
+  Bound each factor by the scalar bound and multiply.
+]
+
+#lemma(
+  "Derivatives of the heat kernel in n dimensions",
+  lean: ("Meat.hasDerivAt_heatKernelVec_update", "Meat.hasDerivAt_heatKernelVec_update_deriv", "Meat.hasDerivAt_heatKernelVec_time"),
+)[
+  In the coordinate $i$,
+  $ partial_i K_s (u) = -(u_i / s) K_s (u), quad partial_i^2 K_s (u) = (u_i^2 / s^2 - 1 / s) K_s (u), $
+  and for $s > 0$,
+  $ partial_s K_s (u) = 1/2 sum_i (u_i^2 / s^2 - 1 / s) K_s (u). $
+][
+  Only one factor depends on $u_i$; apply the scalar derivatives to it.
+  For the time derivative, use the product rule over the $n$ factors.
+]
+
+#lemma(
+  "Gaussian envelope in n dimensions",
+  lean: (
+    "Meat.heatPolyVec_one", "Meat.heatPolyVec_deriv", "Meat.heatPolyVec_deriv2",
+    "Meat.heatPolyVec_sq", "Meat.heatPolyVec_time", "Meat.heatEnvelopeVec",
+    "Meat.heatEnvelopeVec_nonneg", "Meat.continuous_heatEnvelopeVec",
+    "Meat.abs_mul_heatKernelVec_le", "Meat.heatEnvelopeVec_le",
+    "Meat.integrable_exp_neg_mul_sum_sq", "Meat.integrable_sq_mul_exp_neg",
+    "Meat.integrable_heatEnvelopeVec",
+  ),
+)[
+  Let $0 < a <= s <= b$, and let
+  $ E_(a, b) (u) := (2 pi a)^(-n/2) (n + 1) (1 + 1 / a)^2 (1 + |u|^2) e^(-|u|^2 / (2 b)). $
+  If $|c| <= (n + 1) (1 + 1 / a)^2 (1 + |u|^2)$, then $|c K_s (u)| <= E_(a, b)(u)$.
+  The factors $1$, $-u_i / s$, $u_i^2 / s^2 - 1 / s$, $u_i^2 / s^2$ and $1/2 sum_i (u_i^2 / s^2 - 1 / s)$ satisfy this bound.
+  Moreover $E_(a, b) <= (2 pi a)^(-n/2) (n + 1) (1 + 1 / a)^2 (1 + 2 b)$, and $(1 + |u|^2) E_(a, b)(u)$ is integrable.
+][
+  The scalar polynomial bounds hold in each coordinate, and $1 + u_i^2 <= 1 + |u|^2$.
+  The function $e^(-c |u|^2)$ is a product of integrable functions of one coordinate.
+  For the weight, $(1 + t)^2 <= (1 + 4 / c)^2 e^(c t / 2)$ for $t >= 0$.
+]
+
+#definition(
+  "Heat density in n dimensions",
+  lean: ("Meat.heatDensityVec", "Meat.heatDensityVecDeriv", "Meat.heatDensityVecDeriv2"),
+)[
+  For a measure $mu$ on $RR^n$, $s in RR$, $x in RR^n$ and a coordinate $i$,
+  $ p_s (x) := integral K_s (x - y) thin d mu(y), quad partial_i p_s (x) := integral -((x - y)_i / s) K_s (x - y) thin d mu(y), $
+  $ partial_i^2 p_s (x) := integral ((x - y)_i^2 / s^2 - 1 / s) K_s (x - y) thin d mu(y). $
+]
+
+#theorem(
+  "Smoothness of the heat density in n dimensions",
+  lean: (
+    "Meat.integrable_mul_heatKernelVec", "Meat.integrable_heatKernelVec_comp",
+    "Meat.heatDensityVec_pos", "Meat.heatDensityVec_le",
+    "Meat.abs_integral_mul_heatKernelVec_le", "Meat.continuous_integral_mul_heatKernelVec",
+    "Meat.continuous_heatDensityVec", "Meat.continuous_heatDensityVecDeriv",
+    "Meat.continuous_heatDensityVecDeriv2", "Meat.hasDerivAt_heatDensityVec_update",
+    "Meat.hasDerivAt_heatDensityVecDeriv_update", "Meat.hasDerivAt_heatDensityVec_time",
+  ),
+)[
+  Let $mu$ be a probability measure on $RR^n$ and $s > 0$.
+  Then $0 < p_s <= (2 pi s)^(-n/2)$, the three functions above are continuous, the partial derivatives in each coordinate are as named, and
+  $ partial_s p_s (x) = 1/2 sum_i partial_i^2 p_s (x). $
+][
+  Differentiate under the integral sign, one coordinate at a time, with the envelope as the dominating constant.
+  For the time derivative, use the envelope $E_(s \/ 2, 2 s)$.
+]
+
+#lemma(
+  "Moment weight of a smoothed measure",
+  lean: "Meat.integrable_mul_integral_comp_sub_vec",
+)[
+  Let $mu$ have $integral |y|^2 thin d mu(y) < infinity$, and let $g >= 0$ be measurable with $(1 + |u|^2) g(u)$ integrable.
+  Then $x |-> (1 + |x|^2) integral g(x - y) thin d mu(y)$ is integrable.
+][
+  $1 + |x|^2 <= 2 (1 + |y|^2) (1 + |x - y|^2)$.
+  Integrate over the product of $lambda$ and $mu$ and use Tonelli.
+]
+
+
+== The de Bruijn identity in several dimensions
+#source("Meat.Continuous.DeBruijnVec")
+
+#lemma(
+  "Integral of a partial derivative",
+  lean: "Meat.integral_eq_zero_of_hasDerivAt_update",
+)[
+  Let $F, G$ be integrable on $RR^n$ with $partial_i F = G$ along every line in the coordinate $i$.
+  Then $integral G = 0$.
+][
+  Split $RR^n$ as $RR times RR^(n - 1)$ with the coordinate $i$ first.
+  By Fubini, almost every line has $F$ and $G$ integrable, and on such a line the one-dimensional statement applies.
+]
+
+#lemma(
+  "Mass of the heat kernel and of the heat density",
+  lean: ("Meat.integrable_heatKernelVec", "Meat.integral_heatKernelVec", "Meat.integrable_heatDensityVec", "Meat.integrable_heatDensityVecDeriv", "Meat.integral_heatDensityVec"),
+)[
+  For $s > 0$, $K_s$ is integrable with $integral K_s = 1$.
+  If $mu$ is a probability measure, then $integral p_s = 1$.
+  If moreover $integral |y|^2 thin d mu(y) < infinity$, then $p_s$ and $partial_i p_s$ are integrable.
+][
+  The kernel integral is a product of scalar integrals.
+  For $p_s$, swap the integrals by Fubini and use translation invariance.
+  Integrability follows from the moment weight lemma.
+]
+
+#definition(
+  "Fisher information along the heat flow in n dimensions",
+  lean: ("Meat.heatFisherVec", "Meat.heatFisherVec_nonneg", "Meat.integrable_heatFisherVec"),
+)[
+  $ J_mu (s) := sum_i integral (partial_i p_s (x))^2 / p_s (x) thin d x. $
+  It is nonnegative, and each summand is integrable when $mu$ has finite second moment.
+]
+
+#theorem(
+  "de Bruijn identity in n dimensions",
+  lean: ("Meat.integrable_negMulLog_heatDensityVec", "Meat.integral_neg_log_mul_lap", "Meat.hasDerivAt_heatEntropyVec"),
+)[
+  Let $mu$ be a probability measure on $RR^n$ with finite second moment, and let $H_mu (s) := integral eta(p_s (x)) thin d x$.
+  Then $eta compose p_s$ is integrable for $s > 0$, and
+  $ d / (d s) H_mu (s) = 1/2 J_mu (s). $
+][
+  As in one dimension: $log p_s$ grows at most like $1 + |x|^2$, because $p_s$ is bounded above and below by Gaussians on a ball holding half of the mass of $mu$.
+  Differentiate under the integral sign with the heat equation.
+  Integrate by parts in each coordinate with the previous lemma: $-integral (1 + log p_s) partial_i^2 p_s = integral (partial_i p_s)^2 / p_s$.
+]
+
+
+== Stam's inequality in several dimensions
+#source("Meat.Continuous.StamVec")
+
+#lemma(
+  "Products of heat kernels in n dimensions",
+  lean: ("Meat.integral_comp_mul_heatKernelVec", "Meat.integral_heatKernelVec_mul_heatKernelVec", "Meat.integral_heatKernelVec_deriv_mul", "Meat.integral_heatKernelVec_mul_deriv", "Meat.integrable_mul_heatKernelVec_volume"),
+)[
+  Let $t, u > 0$ and $w in RR^n$.
+  Then $integral g(v_i) K_u (v) thin d v = integral g(r) k_u (r) thin d r$,
+  $ integral K_t (z) K_u (w - z) thin d z = K_(t + u)(w), $
+  $ integral -(z_i / t) K_t (z) K_u (w - z) thin d z = integral K_t (z) (-((w - z)_i / u)) K_u (w - z) thin d z = -(w_i / (t + u)) K_(t + u)(w). $
+  Each admissible factor times $K_s$ is integrable.
+][
+  Separate the coordinate $i$ from the others.
+  The integral factors as a product of one-dimensional integrals, and the scalar identities apply to each.
+]
+
+#theorem(
+  "The heat density semigroup in n dimensions",
+  lean: ("Meat.heatDensityVec_add", "Meat.heatDensityVecDeriv_add", "Meat.heatDensityVecDeriv_add'"),
+)[
+  For $t, u > 0$,
+  $ p_(t + u) = p_t * K_u, quad partial_i p_(t + u) = (partial_i p_t) * K_u = p_t * partial_i K_u. $
+][
+  Insert the kernel identities under the integral over $mu$ and swap the integrals by Fubini.
+]
+
+#theorem(
+  "Stam's inequality with a Gaussian summand in n dimensions",
+  lean: "Meat.heatFisherVec_add_le",
+)[
+  Let $n > 0$, let $mu$ have finite second moment, and let $t, u > 0$.
+  Then
+  $ J_mu (t + u) <= J_mu (t) / (1 + u J_mu (t) \/ n). $
+][
+  For each coordinate $i$ and $l in RR$, the scalar weighted Cauchy-Schwarz argument with weight $p_t (z) K_u (x - z)$ gives
+  $ integral (partial_i p_(t + u))^2 / p_(t + u) <= l^2 integral (partial_i p_t)^2 / p_t + (1 - l)^2 / u. $
+  Sum over $i$ to get $J_mu (t + u) <= l^2 J_mu (t) + n (1 - l)^2 \/ u$, and take $l := 1 \/ (1 + u J_mu (t) \/ n)$.
+]
+
+#source("Meat.Continuous.StamVecTwo")
+
+#lemma(
+  "Second moment of a convolution in n dimensions",
+  lean: "Meat.integrable_sum_sq_conv",
+)[
+  If $nu$ and $rho$ have finite second moments, then so does $nu * rho$.
+][
+  $|y + z|^2 <= 2 |y|^2 + 2 |z|^2$, and $nu * rho$ is the image of $nu times rho$ under addition.
+]
+
+#theorem(
+  "Stam's inequality for two summands in n dimensions",
+  lean: "Meat.heatFisherVec_conv_le",
+)[
+  Let $nu, rho$ be probability measures on $RR^n$ with finite second moments, let $s, u > 0$, and let $l in RR$.
+  Then
+  $ J_(nu * rho)(s + u) <= l^2 J_nu (s) + (1 - l)^2 J_rho (u). $
+][
+  First, $p^(nu * rho)_(s + u) = p^nu_s * p^rho_u$, and the same holds with one factor replaced by its partial derivative in the coordinate $i$.
+  Unlike the scalar proof, this does not go through measures: write $p^(nu * rho)_(s + u)(x)$ as an integral over $nu times rho$, insert $K_(s + u) = K_s * K_u$, shift the inner variable, and swap the integrals by Fubini.
+  Then run the scalar Cauchy-Schwarz argument in each coordinate $i$, with $integral partial_i p^rho_u = 0$ from the lemma on integrals of partial derivatives.
+  Sum over $i$.
+]
+
+
+== The entropy power inequality in several dimensions
+#source("Meat.Continuous.EPIVec")
+
+For $n > 0$, the entropy power on $RR^n$ is $e^(2 h \/ n)$ up to the factor $2 pi e$.
+The proof follows the scalar route: the inequality along the heat flow, then the removal of the smoothing.
+
+#lemma(
+  "Second moments under the heat kernel",
+  lean: ("Meat.integrable_sum_sq_mul_heatKernelVec", "Meat.integral_sum_sq_mul_heatKernelVec", "Meat.integral_sum_sq_mul_heatDensityVec", "Meat.log_heatKernelVec"),
+)[
+  For $s > 0$, $integral |v|^2 K_s (v) thin d v = n s$ and
+  $ log K_s (x) = -(n / 2 log(2 pi s) + |x|^2 / (2 s)). $
+  If $mu$ has finite second moment $M$, then $|x|^2 p_s (x)$ is integrable with integral $M + n s$.
+][
+  $integral v_i^2 K_s (v) thin d v = s$ and $integral v_i K_s (v) thin d v = 0$ by the coordinate reduction.
+  For $p_s$, expand $|z + y|^2$ after a shift, and swap the integrals by Fubini.
+]
+
+#definition(
+  "Gaussian measure in n dimensions",
+  lean: ("Meat.gaussianVec", "Meat.sFinite_gaussianVec", "Meat.isProbabilityMeasure_gaussianVec"),
+)[
+  $G_s := K_s dot lambda$, the law of $n$ independent $cal(N)(0, s)$ coordinates.
+  For $s > 0$ it is a probability measure.
+]
+
+#theorem(
+  "The heat density is the density of the smoothed law in n dimensions",
+  lean: ("Meat.withDensity_conv_eq_vec", "Meat.gaussianVec_conv_eq_withDensity", "Meat.measureDiffEntropy_conv_gaussianVec", "Meat.integrable_negMulLog_conv_gaussianVec"),
+)[
+  For a measurable $F >= 0$ and an s-finite $rho$, $(F dot lambda) * rho$ has density $x |-> integral F(x - y) thin d rho(y)$.
+  So $G_s * mu = p_s dot lambda$, and
+  $ h(mu * G_s) = H_mu (s). $
+  If $mu$ has finite second moment, then $eta$ of the density of $mu * G_s$ is integrable.
+][
+  Test against measurable $phi >= 0$ and swap the integrals by Tonelli.
+]
+
+#theorem(
+  "Adding independent noise increases entropy in n dimensions",
+  lean: "Meat.measureDiffEntropy_le_conv_vec",
+)[
+  Let $nu << lambda$ with $eta$ of its density integrable, let $rho$ be a probability measure, and assume $eta$ of the density of $nu * rho$ is integrable.
+  Then $h(nu) <= h(nu * rho)$.
+][
+  The proof for $RR$ uses only translation invariance and Fubini, and carries over word for word: the density of $nu * rho$ is $integral f(x - y) thin d rho(y)$, and Jensen's inequality for the concave $eta$ gives the pointwise bound.
+]
+
+#theorem(
+  "Entropy bounds along the heat flow in n dimensions",
+  lean: ("Meat.measureDiffEntropy_gaussianVec", "Meat.heatEntropyVec_ge", "Meat.heatEntropyVec_le"),
+)[
+  For $s > 0$, $h(G_s) = n / 2 log(2 pi e s)$.
+  If $mu$ has finite second moment $M$, then
+  $ n / 2 log(2 pi e s) <= H_mu (s), $
+  and if moreover $n > 0$,
+  $ H_mu (s) <= n / 2 log(2 pi e (M / n + s)). $
+][
+  The entropy of $G_s$ is $integral K_s (n / 2 log(2 pi s) + |x|^2 \/ (2 s)) = n / 2 log(2 pi s) + n / 2$.
+  The lower bound is the previous theorem for $G_s * mu$.
+  For the upper bound, let $sigma := M \/ n + s$.
+  From $log r <= r - 1$, $eta(p) <= -p log K_sigma + K_sigma - p$ pointwise.
+  Integrate: the right side is $n / 2 log(2 pi sigma) + (M + n s) \/ (2 sigma) = n / 2 log(2 pi e sigma)$.
+]
+
+#theorem(
+  "Entropy power inequality along the heat flow in n dimensions",
+  lean: "Meat.heatEntropyPowerInequalityVec",
+)[
+  Let $n > 0$, let $nu, rho$ be probability measures on $RR^n$ with finite second moments, and let $s, u > 0$.
+  Then
+  $ e^(2 H_nu (s) \/ n) + e^(2 H_rho (u) \/ n) <= e^(2 H_(nu * rho)(s + u) \/ n). $
+][
+  The scalar proof with every $1/2$ replaced by $n / 2$ and every second moment $M$ by $M / n$.
+  The function
+  $ D(tau) := H_(nu * rho)(s + u + tau) - theta H_nu (s + theta tau) - (1 - theta) H_rho (u + (1 - theta) tau) $
+  is antitone by de Bruijn and Stam's inequality for two summands on $RR^n$.
+  The entropy bounds give $D(tau) >= L(tau) -> n / 2 (eta(theta) + eta(1 - theta))$.
+  With $a := e^(2 H_nu (s) \/ n)$, $b := e^(2 H_rho (u) \/ n)$ and $theta := a \/ (a + b)$, the bound $D(0) >= n / 2 (eta(theta) + eta(1 - theta))$ is $H_(nu * rho)(s + u) >= n / 2 log(a + b)$.
+]
+
+#theorem(
+  "Entropy power inequality with Gaussian smoothing in n dimensions",
+  lean: ("Meat.measureDiffEntropy_le_heatEntropyVec", "Meat.entropyPowerInequalityVec_conv_gaussianVec"),
+)[
+  Let $n > 0$, and let $nu, rho << lambda$ be probability measures on $RR^n$ with finite second moments and $eta$ of both densities integrable.
+  Then $h(nu) <= H_nu (s)$ for every $s > 0$, and for every $v > 0$,
+  $ e^(2 h(nu) \/ n) + e^(2 h(rho) \/ n) <= e^(2 h((nu * rho) * G_v) \/ n). $
+][
+  $h(nu) <= h(nu * G_s) = H_nu (s)$ by the noise theorem.
+  Apply the previous theorem at times $v \/ 2$ and $v \/ 2$.
+  This avoids the continuity argument of the scalar proof.
+]
+
+#source("Meat.Continuous.EPIVecTwo")
+
+#theorem(
+  "Entropy is upper semicontinuous under Gaussian smoothing in n dimensions",
+  lean: "Meat.le_measureDiffEntropy_of_le_heatEntropyVec",
+)[
+  Let $mu << lambda$ be a probability measure on $RR^n$ with finite second moment and $eta$ of its density integrable.
+  Let $c in RR$ with $c <= H_mu (v)$ for every $v > 0$.
+  Then $c <= h(mu)$.
+][
+  The scalar proof carries over.
+  Smoothing by $K_v$ converges in $L^1$: for $g$ continuous with compact support, $omega(z) := integral |g(x - z) - g(x)| thin d x$ is small near $0$, and if $norm(z)_infinity >= delta$ then $|z|^2 \/ delta^2 >= 1$, so $integral K_v (z) omega(z) thin d z <= epsilon + 2 norm(g)_1 n v \/ delta^2$.
+  Then apply Fatou's lemma to the nonnegative integrand
+  $ G(x, t) := t log t + t |x|^2 / 2 + n / 2 log(2 pi) t - t + K_1 (x), $
+  whose integral against $p_s$ is $-H_mu (s) + (M + n s) \/ 2 + n / 2 log(2 pi)$.
+]
+
+#definition(
+  "Entropy power inequality in n dimensions",
+  lean: "Meat.EntropyPowerInequalityVec",
+)[
+  The proposition that for all probability measures $nu, rho << lambda$ on $RR^n$ with finite second moments and $eta$ of the densities of $nu$, $rho$ and $nu * rho$ integrable,
+  $ e^(2 h(nu) \/ n) + e^(2 h(rho) \/ n) <= e^(2 h(nu * rho) \/ n). $
+]
+
+#theorem(
+  "Entropy power inequality in n dimensions",
+  lean: "Meat.entropyPowerInequalityVec",
+)[
+  For $n > 0$, the entropy power inequality on $RR^n$ holds.
+][
+  Let $A := e^(2 h(nu) \/ n) + e^(2 h(rho) \/ n)$.
+  For every $v > 0$, the smoothed inequality gives $n / 2 log A <= h((nu * rho) * G_v) = H_(nu * rho)(v)$.
+  The previous theorem with $mu = nu * rho$ gives $n / 2 log A <= h(nu * rho)$.
+]
+
+For $n = 0$ the space is one point, all entropies are $0$, and the inequality $2 <= 1$ fails, so $n > 0$ is needed.
+
+#lemma(
+  "Weighted sums of exponentials",
+  lean: "Meat.exp_weighted_add_le",
+)[
+  Let $p_w >= 0$ with $sum_w p_w = 1$ over a finite set, and let $e^(x_w) + e^(y_w) <= e^(z_w)$ for every $w$.
+  Then
+  $ e^(sum_w p_w x_w) + e^(sum_w p_w y_w) <= e^(sum_w p_w z_w). $
+][
+  Let $t_w := log(e^(x_w) + e^(y_w)) <= z_w$.
+  By the weighted AM-GM inequality, $e^(sum_w p_w (x_w - t_w)) <= sum_w p_w e^(x_w - t_w)$, and the same for $y$.
+  Since $e^(x_w - t_w) + e^(y_w - t_w) = 1$, the left side is at most $e^(sum_w p_w t_w)$.
+]
+
+The lemma says that $(x, y) |-> log(e^x + e^y)$ is convex, and that is the Jensen step over the conditioning.
+
+#theorem(
+  "Conditional entropy power inequality in n dimensions",
+  lean: "Meat.conditionalEntropyPowerInequalityVec",
+)[
+  Let $n > 0$ and let $W$ take finitely many values $w$ with probabilities $p_w$.
+  For each $w$, let $nu_w$ and $rho_w$ be the conditional laws of $X$ and $Y$ given $W = w$, with $X$ and $Y$ conditionally independent, so that $nu_w * rho_w$ is the conditional law of $X + Y$.
+  Assume each $nu_w$, $rho_w$ satisfies the hypotheses of the entropy power inequality on $RR^n$.
+  With $h(X | W) := sum_w p_w h(nu_w)$, and the same for $Y$ and $X + Y$,
+  $ e^(2 h(X | W) \/ n) + e^(2 h(Y | W) \/ n) <= e^(2 h(X + Y | W) \/ n). $
+][
+  Apply the entropy power inequality to each $w$ with $x_w := 2 h(nu_w) \/ n$, $y_w := 2 h(rho_w) \/ n$, $z_w := 2 h(nu_w * rho_w) \/ n$, and then the previous lemma.
+]
+
+In Lean the conditioning is stated with the family of conditional laws and the weights $p_w$, which is the definition of conditional differential entropy for a finite $W$.
+
 == The AWGN channel
 #source("Meat.Continuous.AWGN")
 
