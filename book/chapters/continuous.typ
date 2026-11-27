@@ -708,6 +708,121 @@ With $Y_1 = X + Z_1$ and $Y_2 = Y_1 + Z'$, where $Z' ~ cal(N)(0, N_2 - N_1)$ is 
 So $e^(2 h(X + Z)) >= 1/2 (e^(2 h(X)) + 2 pi e v)$ with no unproved hypothesis: the Gaussian case up to a factor of two.
 
 
+== Stam's inequality for two summands
+#source("Meat.Continuous.StamTwo")
+
+In this section $nu$ and $rho$ are probability measures on $RR$.
+Write $p^nu_s$ and $J_nu (s)$ for the heat density and the Fisher information of $nu$ at time $s$, and the same for $rho$ and $nu * rho$.
+
+#lemma(
+  "Second moment of a convolution",
+  lean: "Meat.integrable_sq_conv",
+)[
+  If $nu$ and $rho$ have finite second moments, then so does $nu * rho$, and
+  $ integral y^2 thin d (nu * rho)(y) = integral y^2 thin d nu(y) + 2 (integral y thin d nu(y)) (integral y thin d rho(y)) + integral y^2 thin d rho(y). $
+][
+  The measure $nu * rho$ is the image of $nu times rho$ under $(y, z) |-> y + z$.
+  Expand $(y + z)^2$.
+  Each of the three terms is integrable on the product, and the cross term splits by Fubini into a product of the two means.
+]
+
+#theorem(
+  "Stam's inequality for two summands",
+  lean: "Meat.heatFisher_conv_le",
+)[
+  Let $nu, rho$ have finite second moments, let $s, u > 0$, and let $l in RR$.
+  Then
+  $ J_(nu * rho)(s + u) <= l^2 J_nu (s) + (1 - l)^2 J_rho (u). $
+][
+  Write $P := p^nu_s$, $Q := p^rho_u$, and $P'$, $Q'$ for their derivatives.
+  First, the heat densities convolve: $p^(nu * rho)_(s + u) = P * Q$.
+  This follows from $cal(N)(0, s + u) = cal(N)(0, s) * cal(N)(0, u)$ and the associativity and commutativity of convolution, since two continuous densities of the same measure are equal.
+  Differentiation under the integral sign gives $(p^(nu * rho)_(s + u))' = P * Q' = P' * Q$.
+  Fix $x$, and let $w(z) := P(z) Q(x - z)$ and
+  $ g(z) := l P'(z) / P(z) + (1 - l) Q'(x - z) / Q(x - z). $
+  Then $integral w = p^(nu * rho)_(s + u)(x)$ and $integral w g = (p^(nu * rho)_(s + u))'(x)$.
+  The weighted Cauchy-Schwarz inequality gives
+  $ ((p^(nu * rho)_(s + u))'(x))^2 / p^(nu * rho)_(s + u)(x) <= integral w g^2. $
+  Integrate in $x$ and swap the integrals by Fubini.
+  For fixed $z$, the integral over $x$ of $w g^2$ is $l^2 P'(z)^2 \/ P(z) + (1 - l)^2 J_rho (u) P(z)$, because $integral Q = 1$ and $integral Q' = 0$ kill the cross term.
+  Integrate in $z$.
+]
+
+With $l = J_rho (u) \/ (J_nu (s) + J_rho (u))$ this is the usual form $1 \/ J_(nu * rho)(s + u) >= 1 \/ J_nu (s) + 1 \/ J_rho (u)$.
+Stam's inequality with a Gaussian summand is the case where $rho$ is a point mass.
+
+
+== The entropy power inequality for smoothed summands
+#source("Meat.Continuous.EPITwo")
+
+Write $H_nu (s) := integral eta(p^nu_s (x)) thin d x = h(nu * cal(N)(0, s))$ for the entropy along the heat flow.
+
+#theorem(
+  "Entropy power inequality along the heat flow",
+  lean: "Meat.heatEntropyPowerInequality",
+)[
+  Let $nu, rho$ be probability measures on $RR$ with finite second moments, and let $s, u > 0$.
+  Then
+  $ e^(2 H_nu (s)) + e^(2 H_rho (u)) <= e^(2 H_(nu * rho)(s + u)). $
+  The measures $nu$ and $rho$ need not have densities.
+][
+  Let $M_nu$ be the second moment of $nu$.
+  The second moment of $nu * cal(N)(0, t)$ is $M_nu + t$, so the maximum entropy theorem gives $H_nu (t) <= 1/2 log(2 pi e (M_nu + t))$.
+  Together with $H_nu (t) >= 1/2 log(2 pi e t)$, this pins down $H_nu (t)$ for large $t$.
+
+  Fix $theta in (0, 1)$ and let
+  $ D(tau) := H_(nu * rho)(s + u + tau) - theta H_nu (s + theta tau) - (1 - theta) H_rho (u + (1 - theta) tau). $
+  By de Bruijn,
+  $ D'(tau) = 1/2 (J_(nu * rho)(s + u + tau) - theta^2 J_nu (s + theta tau) - (1 - theta)^2 J_rho (u + (1 - theta) tau)), $
+  and Stam's inequality for two summands with $l = theta$ makes this $<= 0$.
+  So $D$ is antitone on $[0, infinity)$.
+  The two bounds above give $D(tau) >= L(tau)$, where
+  $ L(tau) := 1/2 (log((s + u) / tau + 1) - theta log((M_nu + s) / tau + theta) - (1 - theta) log((M_rho + u) / tau + 1 - theta)), $
+  since the terms $log(2 pi e tau)$ cancel.
+  As $tau -> infinity$, $L(tau) -> 1/2 (eta(theta) + eta(1 - theta))$.
+  Hence
+  $ H_(nu * rho)(s + u) = D(0) >= theta H_nu (s) + (1 - theta) H_rho (u) + 1/2 (eta(theta) + eta(1 - theta)). $
+  Let $a := e^(2 H_nu (s))$, $b := e^(2 H_rho (u))$ and $theta := a \/ (a + b)$.
+  Then $log theta = 2 H_nu (s) - log(a + b)$ and $log(1 - theta) = 2 H_rho (u) - log(a + b)$, so the right side equals $1/2 log(a + b)$.
+  Take $exp(2 dot)$.
+]
+
+#theorem(
+  "Entropy power inequality with a smoothed summand",
+  lean: "Meat.entropyPowerInequality_conv_gaussianReal",
+)[
+  Let $nu$ be a probability measure on $RR$ with $nu << lambda$, finite second moment, and $eta compose (d nu \/ d lambda)$ integrable.
+  Let $rho$ be a probability measure with finite second moment, and $v > 0$.
+  Then
+  $ e^(2 h(nu)) + e^(2 h(rho * cal(N)(0, v))) <= e^(2 h(nu * (rho * cal(N)(0, v)))). $
+  The measure $rho$ need not have a density.
+][
+  By associativity, $h(nu * (rho * cal(N)(0, v))) = H_(nu * rho)(v)$, and $h(rho * cal(N)(0, v)) = H_rho (v)$.
+  For $0 < epsilon < v$, the previous theorem at times $epsilon$ and $v - epsilon$ gives
+  $ e^(2 H_nu (epsilon)) + e^(2 H_rho (v - epsilon)) <= e^(2 H_(nu * rho)(v)). $
+  Adding independent noise increases differential entropy, so $h(nu) <= H_nu (epsilon)$.
+  The function $H_rho$ is differentiable at $v > 0$ by de Bruijn, so it is continuous there.
+  Let $epsilon -> 0$ from above.
+]
+
+With $rho$ a point mass at $0$ this is the entropy power inequality with a Gaussian summand.
+
+#corollary(
+  "Entropy power inequality up to a small Gaussian",
+  lean: "Meat.entropyPowerInequality_conv_conv_gaussianReal",
+)[
+  Let $nu, rho$ be probability measures on $RR$ with densities, finite second moments, and $eta$ of both densities integrable.
+  Then for every $v > 0$,
+  $ e^(2 h(nu)) + e^(2 h(rho)) <= e^(2 h(nu * (rho * cal(N)(0, v)))). $
+][
+  Apply the previous theorem, and use $h(rho) <= h(rho * cal(N)(0, v))$, since adding independent noise increases differential entropy.
+]
+
+The unconditional entropy power inequality would follow from this corollary if $h(nu * rho * cal(N)(0, v)) -> h(nu * rho)$ as $v -> 0$.
+The lower bound $h(nu * rho) <= h(nu * rho * cal(N)(0, v))$ holds, but the upper bound needs the lower semicontinuity of relative entropy under weak convergence.
+That is not yet formalized, so the general case is still open here.
+
+
 == The AWGN channel
 #source("Meat.Continuous.AWGN")
 
