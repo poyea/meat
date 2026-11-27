@@ -266,6 +266,64 @@ $U_j$ carries the part of message $j$ that both receivers decode.
   So one pair of codebooks has small average error, and time sharing gives the closed convex hull.
 ]
 
+#source("Meat.Open.HanKobayashi")
+
+#definition(
+  "Han-Kobayashi region with unique decoding",
+  lean: (
+    "Meat.IC.hkLaw",
+    "Meat.IC.selectThree",
+    "Meat.IC.hanKobayashi1981Region",
+    "Meat.IC.hanKobayashi1981Union",
+  ),
+)[
+  Each sender $j$ has a common part $U_j tilde p_(U_j)$ and a private part $P_j tilde p_(P_j)$, all four independent, and sends $X_j = f_j (U_j, P_j)$.
+  For receiver 1, $"hkLaw"$ is the law of $(U_1, P_1, U_2, Y_1)$, where $P_2$ is averaged into the channel: $Y_1$ given $(u_1, p_1, u_2)$ has law $sum_(p_2) p_(P_2)(p_2) W_1 (dot given f_1 (u_1, p_1), f_2 (u_2, p_2))$.
+  Receiver 2 uses the same construction with the roles of the users exchanged.
+  For $S subset.eq {0, 1, 2}$, $"selectThree" S$ keeps the coordinates of $(U_1, P_1, U_2)$ indexed by $S$ and hides the others, so the quantity $I(X_S; Y_1 given X_(S^c))$ is the subset information of the virtual three-sender multiple access channel.
+  The region $cal(H)(W, p, f)$ is the set of pairs $(R_1, R_2) = (r_(10) + r_(11), r_(20) + r_(21))$ with $r_(i j) >= 0$ such that $(r_(10), r_(11), r_(20))$ lies in the polymatroid of receiver 1 and $(r_(20), r_(21), r_(10))$ lies in the polymatroid of receiver 2.
+  This is the region of Han and Kobayashi (1981): each receiver decodes its own two parts and the other user's common part uniquely.
+  The union region is the closed convex hull of the union of all $cal(H)$ with finite alphabets.
+]
+
+#theorem(
+  "Han-Kobayashi inner bound",
+  lean: (
+    "Meat.IC.hanKobayashi1981Region_subset_closure_achievableRegion",
+    "Meat.IC.hanKobayashi1981Union_subset_closure_achievableRegion",
+  ),
+)[
+  $cal(H)(W, p, f) subset.eq overline(cal(A)(W))$, and so the union region is contained in $overline(cal(A)(W))$.
+][
+  Split message $j$ into $(m_(j 0), m_(j 1))$ of rates $r_(j 0), r_(j 1)$.
+  Draw four independent codebooks: common codewords i.i.d. $p_(U_j)$ indexed by $m_(j 0)$, and private codewords i.i.d. $p_(P_j)$ indexed by $m_(j 1)$.
+  Sender $j$ sends $f_j$ of its two codewords letter by letter.
+  Receiver 1 runs the joint typicality decoder of the $K$-sender multiple access channel with $K = 3$, for the senders $(U_1, P_1, U_2)$ and the channel with $P_2$ averaged out, and keeps $(m_(10), m_(11))$.
+  For fixed codebooks of the three decoded parts, averaging receiver 1's error over the i.i.d. private codebook of user 2 gives exactly the error of this multiple access code on the averaged channel, because user 2's private codeword is an i.i.d. sequence and $W$ is memoryless.
+  The random coding bound of the multiple access section then bounds the expected error at receiver 1 when every subset sum of rates is strictly below the subset information, and the same holds at receiver 2.
+  So one choice of the four codebooks has small average error.
+  The subset informations of the virtual channel are the quantities $I(X_S; Y given X_(S^c))$ under $"hkLaw"$, by a change of variables.
+  Shrinking each $r_(i j)$ by $delta / 2$ makes all inequalities strict, and time sharing gives the closed convex hull.
+]
+
+#theorem(
+  "Unique decoding region inside the stated Han-Kobayashi region",
+  lean: "Meat.IC.hanKobayashi1981Region_subset_hkRegion",
+)[
+  $cal(H)(W, p, f)$ is contained in the region $cal(R)_"HK"$ of the previous definition, taken with a trivial time-sharing variable $Q$ and with the joint laws of $(U_1, f_1 (U_1, P_1))$ and $(U_2, f_2 (U_2, P_2))$.
+][
+  Each bound of $cal(R)_"HK"$ is a sum of at most three polymatroid bounds.
+  For example, $R_1 + R_2 <= c_1 + d_2$ follows from $r_(10) + r_(11) + r_(20) <= I(U_1, P_1, U_2; Y_1)$ and $r_(21) <= I(P_2; Y_2 given U_1, U_2)$, and $2 R_1 + R_2 <= c_1 + d_1 + e_2$ uses the full bound and the bound for $P_1$ at receiver 1 together with the bound for $(P_2, U_1)$ at receiver 2.
+  It remains to identify the quantities.
+  Given $(U_1, P_1, U_2)$, the output $Y_1$ depends only on $(X_1, U_2)$, so $H(Y_1 given U_1, P_1, U_2) = H(Y_1 given U_1, X_1, U_2) = H(Y_1 given X_1, U_2)$.
+  With this, each conditional mutual information of the polymatroid equals the matching term among $a, c_1, d_1, e_1$, for example $I(U_1, P_1; Y_1 given U_2) = H(Y_1 given U_2) - H(Y_1 given X_1, U_2) = I(X_1; Y_1 given U_2) = a$.
+  The laws of $(U_1, X_1, U_2, Y_1)$ under $"hkLaw"$ and under the joint measure of $cal(R)_"HK"$ agree, so the entropies agree.
+  The bounds at receiver 2 are the same with the users exchanged.
+  This inclusion is the easy direction.
+  Comparing the unions in the other direction needs coded time sharing and the elimination argument of Chong, Motani, Garg and El Gamal.
+  Neither is formalized here, so it is not proved here that $cal(R)_"HK"$ is achievable.
+]
+
 #theorem(
   "Strong interference achievability, Sato and Costa-El Gamal",
   lean: (
