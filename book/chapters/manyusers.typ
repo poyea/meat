@@ -424,8 +424,7 @@ The averaging step uses a supporting hyperplane and the greedy vertices of a pol
 
 One sender has $K$ independent messages, one for each receiver.
 The channel is a DMC $W$ from $A$ to $product_k B_k$, and receiver $k$ sees the coordinate $Y_k$.
-This section has the definitions only.
-The capacity theorem for degraded channels is not formalized yet.
+For degraded channels the capacity region is the union of superposition regions.
 
 #definition(
   "Broadcast code",
@@ -465,8 +464,50 @@ The capacity theorem for degraded channels is not formalized yet.
 ]
 
 For $K = 2$ this is the region $R_1 <= I(X; Y_1 given U)$, $R_2 <= I(U; Y_2)$ of degraded superposition coding, with $U = V_1$.
-The expected theorem is $overline(cal(A)(W)) = overline(union.big cal(S)(q, f))$ for degraded $W$.
+The subsections below prove $overline(cal(A)(W)) = overline(union.big cal(S)(q, f))$ for degraded $W$.
 Its achievability is layered superposition coding, and its converse uses Fano's inequality at each receiver and the degraded chain.
+
+=== Converse for degraded channels
+#source("Meat.Open.BroadcastKConverse")
+
+#theorem("Converse for the degraded broadcast channel", lean: "Meat.BCK.achievableRegion_subset_of_isDegraded")[
+  Let $K >= 1$, let $A$ be finite and let $W$ be degraded.
+  Then $cal(A)(W) subset.eq overline(union.big cal(S)(q, f))$.
+][
+  Replace $W$ by a twin channel with the same marginals in which $Y_0 -> Y_1 -> dots -> Y_(K - 1)$ is a chain at each time; the error probabilities do not change.
+  Fix a code and a time $i$.
+  Let $U_j$ hold the messages $M_l$ for $l >= j$ and the output blocks of the receivers $l >= j - 1$, the other coordinates fixed to a default value.
+  Fano's inequality at receiver $k$ and the chain rule give $(1 - epsilon) n R_k - log 2 <= sum_i I(U_(k, i); Y_(k, i) given U_(k + 1, i))$, where the degraded chain removes the cross terms.
+  A uniform time index mixes the $n$ letters into one law in the union, and the rates converge as $epsilon -> 0$ and $n -> infinity$.
+]
+
+=== Achievability by successive decoding
+#source("Meat.Channel.BroadcastKAchievability")
+
+#theorem("Inner bound for the degraded broadcast channel", lean: "Meat.BCK.superpositionUnion_subset_closure_achievableRegion")[
+  Let $K >= 1$ and let $W$ be degraded.
+  Then $union.big cal(S)(q, f) subset.eq overline(cal(A)(W))$.
+][
+  Write each layer as a function of the layers above it: there are independent random maps $T_l : product_j V_j -> V_l$ such that $V_l = T_l (V_(> l))$ has the law $q$.
+  Then $(T_l)_l$ are the inputs of a channel with $K$ independent senders, and $X = f(V_0)$.
+  Draw independent codebooks of maps for each layer.
+  Receiver $k$ decodes the layers $K - 1, dots, k$ one at a time.
+  At layer $l$ it uses a typicality decoder for the channel from $T_l$ to $(Y_k, T_(> l))$, with the layers above already decoded.
+  If every step with the true layers above is correct, the whole decoder is correct, so the error probability is at most a sum of $K (K + 1) / 2$ step errors.
+  Averaged over the codebooks, each step error is the random coding bound of one channel, and its mutual information is at least $I(U_l; Y_k given U_(l + 1))$.
+  Since $W$ is degraded and $k <= l$, this is at least $I(U_l; Y_l given U_(l + 1)) >= R_l$ by data processing.
+  So $R - delta$ is achievable for every $delta > 0$.
+]
+
+=== Capacity region
+#source("Meat.Channel.BroadcastKCapacity")
+
+#theorem("Capacity region of the degraded broadcast channel", lean: "Meat.BCK.closure_achievableRegion_eq_of_isDegraded")[
+  Let $K >= 1$, let $A$ be finite and let $W$ be degraded.
+  Then $ overline(cal(A)(W)) = overline(union.big cal(S)(q, f)). $
+][
+  The inner bound and the converse.
+]
 
 == Interference channels with $K$ users
 #source("Meat.Open.InterferenceK")
