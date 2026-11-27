@@ -214,6 +214,500 @@ Then $0 > 1/2 log (2 pi e v)$ when $2 pi e v < 1$.
   Equality for $cal(N)(m, sigma^2)$ is the entropy of a Gaussian, since the variance of $cal(N)(m, sigma^2)$ is $sigma^2$.
 ]
 
+== The heat flow
+#source("Meat.Continuous.HeatFlow")
+
+Adding independent Gaussian noise of variance $s$ to a random variable with law $nu$ runs the heat equation for time $s / 2$ on its density.
+This section builds that density and its derivatives for an arbitrary probability measure $nu$ on $RR$.
+
+#definition(
+  "Heat kernel",
+  lean: ("Meat.heatKernel", "Meat.heatKernel_pos", "Meat.gaussianPDFReal_eq_heatKernel", "Meat.integral_heatKernel", "Meat.continuous_heatKernel"),
+)[
+  For $s, u in RR$,
+  $ k_s (u) := (2 pi s)^(-1/2) exp(-u^2 / (2 s)). $
+  For $s > 0$, $k_s > 0$, $k_s$ is continuous, $k_s (u - m)$ is the density of $cal(N)(m, s)$, and $integral k_s (u - m) thin d u = 1$.
+]
+
+#lemma(
+  "Derivatives of the heat kernel",
+  lean: ("Meat.hasDerivAt_heatKernel", "Meat.hasDerivAt_heatKernel_deriv", "Meat.hasDerivAt_heatKernel_time"),
+)[
+  $ partial_u k_s (u) = -(u / s) k_s (u), quad partial_u^2 k_s (u) = (u^2 / s^2 - 1 / s) k_s (u), $
+  and for $s > 0$,
+  $ partial_s k_s (u) = 1/2 (u^2 / s^2 - 1 / s) k_s (u) = 1/2 partial_u^2 k_s (u). $
+][
+  The chain rule and the product rule.
+  For the time derivative, $d / (d s) (2 pi s)^(-1/2) = -(2 pi s)^(-1/2) \/ (2 s)$ and $d / (d s) (-u^2 \/ (2 s)) = u^2 \/ (2 s^2)$.
+]
+
+#lemma(
+  "Gaussian envelope",
+  lean: (
+    "Meat.heatKernel_le", "Meat.heatEnvelope", "Meat.heatEnvelope_nonneg",
+    "Meat.continuous_heatEnvelope", "Meat.abs_mul_heatKernel_le", "Meat.heatPoly_one",
+    "Meat.heatPoly_deriv", "Meat.heatPoly_deriv2", "Meat.heatPoly_time", "Meat.heatEnvelope_le",
+    "Meat.integrable_pow_mul_exp_neg_mul_sq", "Meat.integrable_heatEnvelope",
+  ),
+)[
+  Let $0 < a <= s <= b$, and let
+  $ E_(a, b) (u) := (2 pi a)^(-1/2) (1 + 1 / a)^2 (1 + u^2) e^(-u^2 / (2 b)). $
+  Then $k_s (u) <= (2 pi a)^(-1/2) e^(-u^2 / (2 b))$.
+  If $|c| <= (1 + 1 / a)^2 (1 + u^2)$, then $|c k_s (u)| <= E_(a, b)(u)$.
+  The factors $1$, $-u / s$, $u^2 / s^2 - 1 / s$ and half of the last satisfy this bound.
+  Moreover $E_(a, b) <= (2 pi a)^(-1/2) (1 + 1 / a)^2 (1 + 2 b)$, $u^n e^(-c u^2)$ is integrable for $c > 0$, and so $(1 + u^2) E_(a, b)(u)$ is integrable.
+][
+  $(2 pi s)^(-1/2) <= (2 pi a)^(-1/2)$ and $u^2 \/ (2 s) >= u^2 \/ (2 b)$.
+  The polynomial bounds use $1 \/ s <= 1 \/ a$ and $|u| <= 1 + u^2$.
+  The constant bound uses $u^2 e^(-u^2 \/ (2 b)) <= 2 b$, from $x <= e^x$.
+  Integrability of $u^n e^(-c u^2)$ is Mathlib's Gaussian integral for real powers.
+]
+
+#definition(
+  "Heat density",
+  lean: ("Meat.heatDensity", "Meat.heatDensityDeriv", "Meat.heatDensityDeriv2"),
+)[
+  For a measure $nu$ on $RR$ and $s, x in RR$,
+  $ p_s (x) := integral k_s (x - y) thin d nu(y), quad p'_s (x) := integral -((x - y) / s) k_s (x - y) thin d nu(y), $
+  $ p''_s (x) := integral ((x - y)^2 / s^2 - 1 / s) k_s (x - y) thin d nu(y). $
+]
+
+#theorem(
+  "Smoothness of the heat density",
+  lean: (
+    "Meat.integrable_mul_heatKernel", "Meat.integrable_heatKernel_comp",
+    "Meat.integrable_heatEnvelope_comp", "Meat.abs_integral_mul_heatKernel_le",
+    "Meat.heatDensity_pos", "Meat.heatDensity_le", "Meat.hasDerivAt_heatDensity",
+    "Meat.hasDerivAt_heatDensityDeriv", "Meat.hasDerivAt_heatDensity_time",
+    "Meat.continuous_heatDensity", "Meat.continuous_heatDensityDeriv",
+    "Meat.continuous_heatDensityDeriv2",
+  ),
+)[
+  Let $nu$ be a probability measure and $s > 0$.
+  Then $0 < p_s (x) <= (2 pi s)^(-1/2)$, $partial_x p_s = p'_s$, $partial_x p'_s = p''_s$, and the heat equation holds:
+  $ partial_s p_s (x) = 1/2 p''_s (x). $
+  The functions $p_s$, $p'_s$ and $p''_s$ are continuous, and $|integral c(x - y) k_s (x - y) thin d nu(y)| <= integral E_(a, b)(x - y) thin d nu(y)$ for every admissible factor $c$.
+][
+  Differentiate under the integral sign.
+  The envelope bounds every derivative by a constant, which is $nu$-integrable because $nu$ is finite.
+  For the time derivative, take $s' in (s \/ 2, 2 s)$ and the envelope $E_(s \/ 2, 2 s)$.
+  Positivity: the integrand is positive everywhere and $nu(RR) = 1$.
+]
+
+#theorem(
+  "The heat density is the density of the smoothed law",
+  lean: ("Meat.withDensity_conv_eq", "Meat.gaussianReal_conv_eq_withDensity", "Meat.measureDiffEntropy_conv_gaussianReal"),
+)[
+  If $F$ is measurable, then $(lambda dot F) * rho = lambda dot (x |-> integral F(x - y) thin d rho(y))$.
+  In particular, for $s > 0$,
+  $ cal(N)(0, s) * nu = lambda dot p_s, quad h(nu * cal(N)(0, s)) = integral eta(p_s (x)) thin d x. $
+][
+  Test against a measurable $phi >= 0$, translate by $y$ inside the inner integral, and swap the integrals by Tonelli.
+  Then $integral^- "ofReal"(k_s (x - y)) thin d nu(y) = "ofReal"(p_s (x))$ because $k_s$ is integrable and positive.
+  The Radon-Nikodym derivative of $lambda dot p_s$ is $p_s$ almost everywhere.
+]
+
+#lemma(
+  "Weighted integrability against a convolution",
+  lean: "Meat.integrable_mul_integral_comp_sub",
+)[
+  Let $nu$ be a probability measure with $integral y^2 thin d nu < infinity$.
+  Let $g >= 0$ be measurable with $(1 + u^2) g(u)$ integrable.
+  Then $x |-> (1 + x^2) integral g(x - y) thin d nu(y)$ is integrable.
+][
+  $1 + x^2 <= 2 (1 + y^2)(1 + (x - y)^2)$.
+  The function $(x, y) |-> 2 (1 + y^2)(1 + (x - y)^2) g(x - y)$ is integrable on $lambda times nu$, since each section is a translate and its integral is $2 (1 + y^2) integral (1 + u^2) g$.
+  Integrate out $y$.
+]
+
+
+== The de Bruijn identity
+#source("Meat.Continuous.DeBruijn")
+
+Throughout, $nu$ is a probability measure on $RR$ with $integral y^2 thin d nu(y) < infinity$, and $p_s$ is its heat density from the previous section.
+
+#lemma(
+  "Weighted Cauchy-Schwarz inequality",
+  lean: "Meat.sq_integral_mul_le",
+)[
+  Let $w >= 0$, and let $w$, $w f$ and $w f^2$ be integrable.
+  Then
+  $ (integral w f)^2 <= (integral w) (integral w f^2). $
+][
+  For every $c$, $0 <= integral w (f - c)^2 = B - 2 c A + c^2 W$.
+  If $W > 0$, take $c = A \/ W$.
+  If $W = 0$ and $A != 0$, take $c = (B + 1) \/ (2 A)$ for a contradiction.
+]
+
+#lemma(
+  "Integrability along the heat flow",
+  lean: (
+    "Meat.heatPoly_sq", "Meat.integrable_negMulLog_heatDensity", "Meat.integrable_heatFisher",
+    "Meat.integrable_heatDensity", "Meat.integrable_heatDensityDeriv", "Meat.integral_heatDensity",
+  ),
+)[
+  For $s > 0$, the functions $eta compose p_s$, $(p'_s)^2 \/ p_s$, $p_s$ and $p'_s$ are integrable, and $integral p_s = 1$.
+][
+  Choose $R$ with $nu([-R, R]) >= 1 / 2$.
+  Then $p_s (x) >= 1/2 (2 pi b)^(-1/2) e^(-(x^2 + R^2) \/ a)$ for $a <= s <= b$, and with $p_s <= (2 pi a)^(-1/2)$ this gives $|1 + log p_s (x)| <= L (1 + x^2)$.
+  By Cauchy-Schwarz with weight $k_s (x - y)$, $(p'_s)^2 \/ p_s <= integral (x - y)^2 \/ s^2 k_s (x - y) thin d nu(y)$.
+  Every function above is then bounded by a constant times $(1 + x^2) integral E(x - y) thin d nu(y)$, which is integrable by the weighted integrability lemma.
+  The total mass is $1$ because $lambda dot p_s = cal(N)(0, s) * nu$ is a probability measure.
+]
+
+#definition("Fisher information along the heat flow", lean: ("Meat.heatFisher", "Meat.heatFisher_nonneg"))[
+  $ J(s) := integral (p'_s (x))^2 / p_s (x) thin d x. $
+  For $s > 0$, $J(s) >= 0$.
+]
+
+#lemma(
+  "Integration by parts",
+  lean: "Meat.integral_neg_log_mul_heatDensityDeriv2",
+)[
+  For $s > 0$,
+  $ integral (-log p_s (x) - 1) (p''_s (x) / 2) thin d x = J(s) / 2. $
+][
+  Let $G := (1 + log p_s) p'_s$.
+  Then $G' = (p'_s)^2 \/ p_s + (1 + log p_s) p''_s$.
+  Both $G$ and $G'$ are integrable, so $integral G' = 0$.
+  No limit at infinity is needed for this.
+]
+
+#theorem(
+  "de Bruijn identity",
+  lean: "Meat.hasDerivAt_heatEntropy",
+)[
+  For $t > 0$, the function $s |-> h(nu * cal(N)(0, s)) = integral eta(p_s (x)) thin d x$ has derivative $J(t) \/ 2$ at $t$.
+][
+  By the heat equation, $partial_s eta(p_s) = (-log p_s - 1) p''_s \/ 2$.
+  For $s in (t \/ 2, 2 t)$ this is bounded by $L (1 + x^2) integral E_(t \/ 2, 2 t)(x - y) thin d nu(y)$, which is integrable.
+  So the derivative passes under the integral, and integration by parts gives $J(t) \/ 2$.
+]
+
+
+== Fisher information
+#source("Meat.Continuous.Fisher")
+
+Fisher information measures how sharply a density changes under a shift.
+The de Bruijn identity links it to the derivative of differential entropy along the heat flow.
+
+#definition("Fisher information", lean: "Meat.fisherInfo")[
+  For $f : RR -> RR$,
+  $ J(f) := integral (f'(x))^2 / f(x) thin d x. $
+  Lean divides by zero as zero, so points with $f(x) = 0$ add nothing.
+]
+
+#lemma(
+  "Derivative of the Gaussian density",
+  lean: "Meat.hasDerivAt_gaussianPDFReal",
+)[
+  Let $phi_(m, v)$ be the density of $cal(N)(m, v)$.
+  For every $x in RR$,
+  $ phi_(m, v)'(x) = -(x - m) / v dot phi_(m, v)(x). $
+][
+  Differentiate $phi_(m, v)(x) = (2 pi v)^(-1/2) exp(-(x - m)^2 \/ (2 v))$ by the chain rule.
+  For $v = 0$ both sides are $0$, because Lean sets $phi_(m, 0) = 0$ and divides by zero as zero.
+]
+
+#theorem(
+  "Fisher information of a Gaussian",
+  lean: "Meat.fisherInfo_gaussianPDFReal",
+)[
+  For $v > 0$,
+  $ J(phi_(m, v)) = 1 / v. $
+][
+  By the lemma, $(phi')^2 \/ phi = (x - m)^2 \/ v^2 dot phi$, since $phi > 0$.
+  So $J(phi) = v^(-2) integral (x - m)^2 phi(x) thin d x = v^(-2) dot v = 1 \/ v$.
+]
+
+#theorem(
+  "Cramér-Rao bound for a location parameter",
+  lean: "Meat.one_le_integral_sq_mul_fisherInfo",
+)[
+  Let $f : RR -> RR$ be differentiable and nonnegative with $integral f = 1$, and let $m in RR$.
+  Assume that $f$, $(x - m) f'(x)$, $(x - m)^2 f(x)$ and $(f')^2 \/ f$ are integrable, and that $(x - m) f(x) -> 0$ as $x -> plus.minus infinity$.
+  Then
+  $ 1 <= (integral (x - m)^2 f(x) thin d x) dot J(f). $
+  In particular $"Var"(f) dot J(f) >= 1$, with equality for Gaussians.
+][
+  The derivative of $(x - m) f(x)$ is $f(x) + (x - m) f'(x)$.
+  It is integrable, and $(x - m) f(x)$ tends to $0$ at both ends, so its integral is $0$.
+  Hence $integral (x - m) f'(x) thin d x = -1$.
+  Let $V := integral (x - m)^2 f$.
+  For every $a in RR$ and every $x$,
+  $ a^2 (x - m)^2 f(x) + 2 a (x - m) f'(x) + (f'(x))^2 / f(x) >= 0. $
+  If $f(x) > 0$, the left side is $f(x) (a (x - m) + f'(x) \/ f(x))^2$.
+  If $f(x) = 0$, then $x$ is a minimum of $f$, so $f'(x) = 0$ and the left side is $0$.
+  Integrate: $a^2 V - 2 a + J(f) >= 0$ for all $a$.
+  If $V = 0$, take $a = J(f) \/ 2 + 1$ for a contradiction.
+  If $V > 0$, take $a = 1 \/ V$ to get $J(f) >= 1 \/ V$.
+]
+
+The Gaussian attains equality: $V = v$ and $J = 1 \/ v$.
+
+#lemma(
+  "Fisher information of the heat density",
+  lean: "Meat.fisherInfo_heatDensity",
+)[
+  For a probability measure $nu$ and $s > 0$, $J(p_s)$ equals the heat-flow Fisher information $J(s)$ of the de Bruijn section.
+][
+  The derivative of $p_s$ is $p'_s$.
+]
+
+
+== Stam's inequality with a Gaussian summand
+#source("Meat.Continuous.Stam")
+
+#lemma(
+  "Product of heat kernels",
+  lean: ("Meat.heatKernel_mul_heatKernel", "Meat.heatKernel_le_const"),
+)[
+  For $t, u > 0$, let $sigma := t u \/ (t + u)$.
+  Then
+  $ k_t (z) k_u (w - z) = k_(t + u)(w) k_sigma (z - t w \/ (t + u)). $
+  Also $k_s <= (2 pi s)^(-1/2)$.
+][
+  Complete the square in the exponent, and use $2 pi t dot 2 pi u = 2 pi (t + u) dot 2 pi sigma$ for the constants.
+]
+
+#lemma(
+  "Gaussian moments",
+  lean: ("Meat.integrable_mul_heatKernel_volume", "Meat.integral_mul_heatKernel_moment"),
+)[
+  For $s > 0$, $c(v) k_s (v)$ is integrable for every admissible factor $c$, and
+  $ integral k_s = 1, quad integral v k_s (v) thin d v = 0, quad integral v^2 k_s (v) thin d v = s. $
+][
+  The envelope bounds the integrand.
+  The moments are the mass, mean and variance of $cal(N)(0, s)$.
+]
+
+#lemma(
+  "Chapman-Kolmogorov identities",
+  lean: (
+    "Meat.integral_heatKernel_mul_heatKernel", "Meat.integral_heatKernel_deriv_mul_heatKernel",
+    "Meat.integral_heatKernel_mul_heatKernel_deriv",
+  ),
+)[
+  For $t, u > 0$,
+  $ integral k_t (z) k_u (w - z) thin d z = k_(t + u)(w), $
+  $ integral -(z / t) k_t (z) k_u (w - z) thin d z = integral k_t (z) (-(w - z) / u) k_u (w - z) thin d z = -(w / (t + u)) k_(t + u)(w). $
+][
+  Apply the product lemma, and integrate the shifted kernel $k_sigma$ against $1$, $z$ and $w - z$.
+]
+
+#theorem(
+  "Semigroup property of the heat density",
+  lean: ("Meat.heatDensity_add", "Meat.heatDensityDeriv_add", "Meat.heatDensityDeriv_add'"),
+)[
+  For a probability measure $nu$ and $t, u > 0$,
+  $ p_(t + u)(x) = integral p_t (z) k_u (x - z) thin d z, $
+  $ p'_(t + u)(x) = integral p'_t (z) k_u (x - z) thin d z = integral p_t (z) (-(x - z) / u) k_u (x - z) thin d z. $
+][
+  Write $p_t (z)$ as an integral over $nu$, swap the order by Fubini (the integrand is bounded by a translate of an integrable function times a constant), shift $z$ by $y$, and apply the Chapman-Kolmogorov identities.
+]
+
+#theorem(
+  "Stam's inequality along the heat flow",
+  lean: "Meat.heatFisher_add_le",
+)[
+  Let $nu$ be a probability measure with finite second moment, and $t, u > 0$.
+  Then
+  $ J(t + u) <= J(t) / (1 + u J(t)), quad "equivalently" quad 1 / J(t + u) >= 1 / J(t) + u. $
+][
+  Fix $lambda in [0, 1]$.
+  By the semigroup property, $p'_(t + u)(x) = integral w_x g_x$ with weight $w_x (z) = p_t (z) k_u (x - z)$ and
+  $ g_x (z) = lambda p'_t (z) / p_t (z) - (1 - lambda)(x - z) / u. $
+  Since $integral w_x = p_(t + u)(x)$, the weighted Cauchy-Schwarz inequality gives $(p'_(t + u))^2 \/ p_(t + u) <= integral w_x g_x^2$.
+  Integrate in $x$ and swap by Fubini.
+  The Gaussian moments give $integral w_x g_x^2 thin d x = p_t (z) (lambda^2 (p'_t \/ p_t)^2 + (1 - lambda)^2 \/ u)$ and kill the cross term.
+  So $J(t + u) <= lambda^2 J(t) + (1 - lambda)^2 \/ u$.
+  Take $lambda = 1 \/ (1 + u J(t))$.
+]
+
+
+== The entropy power inequality
+#source("Meat.Continuous.EPI")
+
+#definition("Entropy power", lean: "Meat.entropyPower")[
+  For a measure $nu$ on $RR$,
+  $ N(nu) := e^(2 h(nu)) / (2 pi e). $
+]
+
+#lemma(
+  "Basic facts on entropy power",
+  lean: ("Meat.entropyPower_pos", "Meat.exp_two_mul_measureDiffEntropy"),
+)[
+  $N(nu) > 0$, and $e^(2 h(nu)) = 2 pi e dot N(nu)$.
+][
+  Both follow from the definition.
+]
+
+#theorem(
+  "Entropy power of a Gaussian",
+  lean: ("Meat.entropyPower_gaussianReal", "Meat.entropyPower_gaussianReal_conv"),
+)[
+  For $v > 0$, $N(cal(N)(m, v)) = v$.
+  For $v_1, v_2 > 0$,
+  $ N(cal(N)(m_1, v_1) * cal(N)(m_2, v_2)) = N(cal(N)(m_1, v_1)) + N(cal(N)(m_2, v_2)). $
+  So Gaussians attain equality in the entropy power inequality.
+][
+  $h(cal(N)(m, v)) = 1/2 log(2 pi e v)$, so $e^(2 h) = 2 pi e v$.
+  The convolution of two Gaussians is $cal(N)(m_1 + m_2, v_1 + v_2)$.
+]
+
+#theorem(
+  "Entropy power is at most the variance",
+  lean: "Meat.entropyPower_le_variance",
+)[
+  Let $nu$ be a probability measure on $RR$ with $nu << lambda$, finite second moment and $eta compose (d nu \/ d lambda)$ integrable.
+  Then $N(nu) <= "Var"(nu)$.
+][
+  This is the maximum entropy theorem, $h(nu) <= 1/2 log(2 pi e "Var"(nu))$, after taking $exp(2 dot)$.
+]
+
+#theorem(
+  "Adding independent noise increases differential entropy",
+  lean: "Meat.measureDiffEntropy_le_conv",
+)[
+  Let $nu, rho$ be probability measures on $RR$ with $nu << lambda$.
+  Assume that $eta compose (d nu \/ d lambda)$ and $eta compose (d (nu * rho) \/ d lambda)$ are integrable.
+  Then
+  $ h(nu) <= h(nu * rho). $
+  The measure $rho$ need not have a density.
+][
+  Let $f := d nu \/ d lambda$.
+  First, $nu * rho$ has density $g(x) := integral f(x - y) thin d rho(y)$.
+  To see this, test against a measurable $phi >= 0$, move the shift onto $f$ by translation invariance of $lambda$, and swap the integrals by Tonelli.
+  The function $(x, y) |-> eta(f(x - y))$ is integrable on $lambda times rho$, since each section is a translate of $eta compose f$.
+  For almost every $x$, $y |-> f(x - y)$ is $rho$-integrable, and Jensen's inequality for the concave $eta$ gives
+  $ integral eta(f(x - y)) thin d rho(y) <= eta(g(x)). $
+  Integrate in $x$ and swap by Fubini:
+  $ h(nu) = integral integral eta(f(x - y)) thin d x thin d rho(y) <= integral eta(g(x)) thin d x = h(nu * rho). $
+]
+
+The integrability hypothesis on $nu * rho$ cannot be dropped, because the Bochner integral of a non-integrable function is $0$.
+
+#corollary(
+  "Random variable form",
+  lean: "Meat.diffEntropy_le_diffEntropy_add",
+)[
+  Let $X, Y$ be independent real random variables, with $X$ having a density and the integrability hypotheses above for $X$ and $X + Y$.
+  Then $h(X) <= h(X + Y)$.
+][
+  The law of $X + Y$ is $X_* mu * Y_* mu$.
+]
+
+#corollary(
+  "The entropy power inequality within a factor of two",
+  lean: ("Meat.max_entropyPower_le_conv", "Meat.entropyPower_add_le_two_mul_conv"),
+)[
+  Let $nu, rho$ be probability measures on $RR$ with densities, and with $eta$ of the densities of $nu$, $rho$ and $nu * rho$ integrable.
+  Then
+  $ max(N(nu), N(rho)) <= N(nu * rho), quad N(nu) + N(rho) <= 2 N(nu * rho). $
+][
+  Apply the theorem to $nu * rho$ and to $rho * nu = nu * rho$, and use that $exp$ is monotone.
+  The second inequality follows, since a sum of two numbers is at most twice their maximum.
+]
+
+#definition(
+  "Entropy power inequality",
+  lean: ("Meat.EntropyPowerInequality", "Meat.GaussianEntropyPowerInequality"),
+)[
+  The entropy power inequality is the statement: for all probability measures $nu, rho$ on $RR$ with densities, finite second moments, and $eta$ of the densities of $nu$, $rho$ and $nu * rho$ integrable,
+  $ e^(2 h(nu * rho)) >= e^(2 h(nu)) + e^(2 h(rho)). $
+  Its Gaussian case is the statement: for every probability measure $nu$ with a density, finite second moment and $eta$ of its density integrable, and every $v > 0$,
+  $ e^(2 h(nu * cal(N)(0, v))) >= e^(2 h(nu)) + 2 pi e v. $
+  The Gaussian case is proved below.
+  The general case is still a proposition here.
+]
+
+#lemma(
+  "Entropy power form",
+  lean: "Meat.entropyPowerInequality_iff_entropyPower",
+)[
+  The entropy power inequality holds if and only if $N(nu) + N(rho) <= N(nu * rho)$ under the same hypotheses.
+][
+  Divide by $2 pi e > 0$.
+]
+
+#lemma(
+  "Entropy along the heat flow",
+  lean: ("Meat.integrable_negMulLog_conv_gaussianReal", "Meat.heatEntropy_ge"),
+)[
+  Let $nu$ be a probability measure with finite second moment, and $s > 0$.
+  Then $eta$ of the density of $nu * cal(N)(0, s)$ is integrable, and
+  $ integral eta(p_s (x)) thin d x >= 1/2 log(2 pi e s). $
+][
+  The density of $nu * cal(N)(0, s)$ is $p_s$ almost everywhere.
+  The bound is the noise theorem applied to $cal(N)(0, s) * nu$.
+]
+
+#theorem(
+  "Isoperimetric inequality for entropy along the heat flow",
+  lean: "Meat.two_pi_e_le_exp_mul_heatFisher",
+)[
+  Let $nu$ be a probability measure with finite second moment, and $t > 0$.
+  Then
+  $ e^(2 h(nu * cal(N)(0, t))) J(t) >= 2 pi e, $
+  that is, $N J >= 1$.
+][
+  Let $H(s) := h(nu * cal(N)(0, s))$.
+  The function $Phi(tau) := H(t + tau) - 1/2 log(1 + tau J(t))$ has derivative $J(t + tau) \/ 2 - J(t) \/ (2 (1 + tau J(t)))$ by de Bruijn.
+  By Stam's inequality the derivative is $<= 0$, so $Phi(T) <= Phi(0) = H(t)$ for $T >= 0$.
+  With $H(t + T) >= 1/2 log(2 pi e (t + T))$ this gives
+  $ 2 pi e (t + T) <= e^(2 H(t)) (1 + T J(t)) quad "for all" T > 0. $
+  If $e^(2 H(t)) J(t) < 2 pi e$, then $T = e^(2 H(t)) \/ (2 pi e - e^(2 H(t)) J(t)) + 1$ contradicts this.
+  No asymptotics as $T -> infinity$ are needed.
+]
+
+#theorem(
+  "Entropy power inequality with a Gaussian summand",
+  lean: "Meat.gaussianEntropyPowerInequality",
+)[
+  Let $nu$ be a probability measure on $RR$ with $nu << lambda$, finite second moment, and $eta compose (d nu \/ d lambda)$ integrable.
+  Let $v > 0$.
+  Then
+  $ e^(2 h(nu * cal(N)(0, v))) >= e^(2 h(nu)) + 2 pi e v. $
+][
+  Let $H(s) := h(nu * cal(N)(0, s))$ and $c := 2 pi e$.
+  By de Bruijn, $s |-> e^(2 H(s)) - c s$ has derivative $e^(2 H(s)) J(s) - c >= 0$ on $(0, infinity)$, by the isoperimetric inequality.
+  So for $0 < epsilon < v$, $e^(2 H(v)) >= e^(2 H(epsilon)) + c (v - epsilon)$.
+  Adding independent noise increases differential entropy, so $H(epsilon) >= h(nu)$.
+  Let $epsilon -> 0$.
+  No continuity of $H$ at $0$ is needed.
+]
+
+#theorem(
+  "Gaussian noise and entropy power",
+  lean: "Meat.diffEntropy_add_gaussian_ge",
+)[
+  Let $X$ be a real random variable with a density, finite second moment and $eta$ of its density integrable.
+  Let $Z ~ cal(N)(0, v)$ with $v > 0$ be independent of $X$.
+  Then
+  $ h(X + Z) >= 1/2 log(e^(2 h(X)) + 2 pi e v). $
+][
+  The law of $X + Z$ is $X_* mu * cal(N)(0, v)$.
+  Take $log$ of the previous theorem and divide by $2$.
+]
+
+This is the form that the converse for the degraded Gaussian broadcast channel uses.
+With $Y_1 = X + Z_1$ and $Y_2 = Y_1 + Z'$, where $Z' ~ cal(N)(0, N_2 - N_1)$ is independent of $Y_1$, it gives $h(Y_2) >= 1/2 log(e^(2 h(Y_1)) + 2 pi e (N_2 - N_1))$.
+
+#theorem(
+  "Unconditional Gaussian noise bound",
+  lean: "Meat.max_diffEntropy_le_add_gaussian",
+)[
+  Let $X$ have a density with $eta$ of the density integrable.
+  Let $Z ~ cal(N)(0, v)$ with $v > 0$ be independent of $X$, and assume $eta$ of the density of $X + Z$ is integrable.
+  Then
+  $ max(h(X), 1/2 log(2 pi e v)) <= h(X + Z). $
+][
+  Apply the noise theorem twice: to $X_* mu * cal(N)(0, v)$ and to $cal(N)(0, v) * X_* mu$.
+]
+
+So $e^(2 h(X + Z)) >= 1/2 (e^(2 h(X)) + 2 pi e v)$ with no unproved hypothesis: the Gaussian case up to a factor of two.
+
+
 == The AWGN channel
 #source("Meat.Continuous.AWGN")
 
