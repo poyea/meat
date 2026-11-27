@@ -93,6 +93,12 @@ import Meat.Continuous.EPI
 import Meat.Continuous.StamTwo
 import Meat.Continuous.EPITwo
 import Meat.Continuous.EPIThree
+import Meat.Continuous.HeatFlowVec
+import Meat.Continuous.DeBruijnVec
+import Meat.Continuous.StamVec
+import Meat.Continuous.StamVecTwo
+import Meat.Continuous.EPIVec
+import Meat.Continuous.EPIVecTwo
 import Meat.Continuous.AWGN
 import Meat.Continuous.AWGNConverse
 import Meat.Continuous.AWGNAchievability
