@@ -63,6 +63,7 @@ import Meat.Channel.MultipleAccessConverse
 import Meat.Channel.MultipleAccessTheorem
 import Meat.Channel.Broadcast
 import Meat.Channel.BroadcastAchievability
+import Meat.Channel.BroadcastMaxError
 import Meat.Channel.MultipleAccessK
 import Meat.Channel.MultipleAccessKAchievability
 import Meat.Channel.MultipleAccessKConverse
