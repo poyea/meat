@@ -91,6 +91,7 @@ import Meat.Continuous.Stam
 import Meat.Continuous.EPI
 import Meat.Continuous.StamTwo
 import Meat.Continuous.EPITwo
+import Meat.Continuous.EPIThree
 import Meat.Continuous.AWGN
 import Meat.Continuous.AWGNConverse
 import Meat.Continuous.AWGNAchievability
