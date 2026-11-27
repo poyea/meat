@@ -102,6 +102,129 @@ The Lean notation is `H₂[X ; μ]`, `H₂[X | Y ; μ]`, `I₂[X : Y ; μ]` and 
   ),
 )[]
 
+== Axiomatic characterization of entropy
+#source("Meat.Shannon.Axioms")
+
+Why $sum_s eta(p_s)$ and not some other function of $p$?
+Faddeev (1956) showed that a few natural requirements force this formula, up to a constant factor.
+Here a distribution is a finite list $(p_1, dots, p_n)$ of reals, and a candidate measure of uncertainty is any function $H$ on such lists.
+
+#definition(
+  "Probability lists and their entropy",
+  lean: (
+    "Meat.IsProbList",
+    "Meat.listEntropy",
+    "Meat.IsProbList.perm",
+    "Meat.listEntropy_perm",
+  ),
+)[
+  A list $(p_1, dots, p_n)$ of reals is a probability list if $p_i >= 0$ for each $i$ and $sum_i p_i = 1$.
+  Its entropy is $H_"S" (p_1, dots, p_n) := sum_i eta(p_i)$.
+  A permutation of a probability list is a probability list, and it has the same entropy.
+]
+
+#definition("Faddeev's axioms", lean: "Meat.FaddeevAxioms")[
+  A function $H$ on lists of reals satisfies Faddeev's axioms if, on probability lists:
+  + it is symmetric: $H(p) = H(p')$ when $p'$ is a permutation of $p$;
+  + the map $x |-> H(x, 1 - x)$ is continuous on $[0, 1]$;
+  + it satisfies the grouping rule: if $a + b > 0$, then
+  $ H(a, b, p_3, dots, p_n) = H(a + b, p_3, dots, p_n) + (a + b) H(a / (a + b), b / (a + b)). $
+]
+
+The grouping rule says that a choice can be made in two steps.
+First choose between $a + b$ and the other outcomes, then, with probability $a + b$, choose between $a$ and $b$.
+The uncertainty of the second step is weighted by the probability that it happens.
+The normalization $H(1 \/ 2, 1 \/ 2) = 1$ fixes the unit; without it the constant stays free.
+
+#lemma("Shannon entropy satisfies the axioms", lean: "Meat.faddeevAxioms_mul_listEntropy")[
+  For each real $c$, the function $c H_"S"$ satisfies Faddeev's axioms.
+][
+  Symmetry holds because a sum does not depend on the order of its terms.
+  Continuity holds because $eta$ is continuous on $[0, infinity)$.
+  For grouping, put $s := a + b$.
+  From $eta(x y) = y eta(x) + x eta(y)$ with $a = s dot a \/ s$,
+  $ eta(a) = a / s eta(s) + s eta(a / s), $
+  and the same for $b$.
+  Add the two identities and use $a \/ s + b \/ s = 1$:
+  $ eta(a) + eta(b) = eta(s) + s (eta(a / s) + eta(b / s)). $
+]
+
+#theorem(
+  "Faddeev's theorem",
+  lean: ("Meat.FaddeevAxioms.eq_mul_listEntropy", "Meat.FaddeevAxioms.eq_listEntropy_div_log_two"),
+)[
+  If $H$ satisfies Faddeev's axioms, then for every probability list $p$,
+  $ H(p) = H(1 / 2, 1 / 2) / (log 2) H_"S" (p). $
+  In particular, if $H(1 \/ 2, 1 \/ 2) = 1$, then $H$ is the entropy in bits, $H_"S" (p) \/ log 2$.
+][
+  Put $f(x) := H(x, 1 - x)$ and $c := H(1 \/ 2, 1 \/ 2) \/ log 2$.
+
+  _Small cases._
+  Grouping applied to $(1, 0)$ gives $H(1) = 0$.
+  Grouping applied to $(1 \/ 2, 1 \/ 2, 0)$ and to the permutation $(1 \/ 2, 0, 1 \/ 2)$ gives $f(1) + f(1 \/ 2) = f(1 \/ 2) + f(1) \/ 2$, so $f(1) = 0$; by symmetry $f(0) = 0$.
+
+  _Grouping of blocks._
+  If $q = (q_1, dots, q_m)$ has sum $s > 0$, then
+  $ H(q_1, dots, q_m, p_1, dots, p_n) = H(s, p_1, dots, p_n) + s H(q_1 / s, dots, q_m / s). $
+  The proof is by induction on $m$.
+  By symmetry, move a positive entry of $q$ to the front; then merge the first two entries with the grouping rule, and apply the induction hypothesis to the shorter block.
+
+  _Uniform lists._
+  Put $F(n) := H(1 \/ n, dots, 1 \/ n)$, so $F(1) = 0$.
+  Grouping $m$ blocks of $n$ entries $1 \/ (m n)$ one at a time, and moving each merged entry to the back by symmetry, gives $F(m n) = F(m) + F(n)$.
+  Grouping a block of $j$ and a block of $k$ entries $1 \/ (j + k)$ gives
+  $ F(j + k) = f(k / (j + k)) + k / (j + k) F(k) + j / (j + k) F(j). $
+
+  _The logarithm._
+  With $j = 1$ and $k = n$, $delta_n := F(n + 1) - n / (n + 1) F(n) = f(n / (n + 1))$, which tends to $f(1) = 0$ by continuity.
+  The identity $n F(n) = sum_(i < n) (i + 1) delta_i$ gives $|F(n)| <= sum_(i < n) |delta_i|$, so $F(n) \/ (n + 1) -> 0$ by Cesàro, and $F(n + 1) - F(n) -> 0$.
+  Let $g(n) := F(n) - c log n$.
+  Then $g$ is completely additive, $g(2) = 0$, and $g(n + 1) - g(n) -> 0$.
+  Fix $epsilon > 0$ and $N$ with $|g(j + 1) - g(j)| < epsilon log 2$ for $j >= N$.
+  Since $g(2 a) = g(a)$, strong induction on $n$ via $a = floor(n \/ 2)$ gives a constant $A$ with $|g(n)| <= A + epsilon log n$ for all $n >= 1$.
+  Apply this to $n^k$: $k |g(n)| <= A + epsilon k log n$, so $|g(n)| <= epsilon (1 + log n)$ for large $k$.
+  As $epsilon$ is arbitrary, $g(n) = 0$, that is $F(n) = c log n$.
+
+  _Two-point lists._
+  For $1 <= k < N$, the block identity and $F = c log$ give $f(k \/ N) = c (eta(k \/ N) + eta(1 - k \/ N))$.
+  This also holds for $k = 0$ and $k = N$.
+  For $x in [0, 1]$, the points $floor(n x) \/ n$ tend to $x$ inside $[0, 1]$.
+  Both $f$ and $x |-> c (eta(x) + eta(1 - x))$ are continuous on $[0, 1]$, so they agree at $x$.
+
+  _All lists._
+  By induction on the length of $p$.
+  By symmetry, let $p_1 > 0$.
+  A list of length $1$ is $(1)$, and $H(1) = 0 = c eta(1)$.
+  Otherwise apply the grouping rule to $p_1, p_2$, the induction hypothesis to $(p_1 + p_2, p_3, dots)$, and the two-point case to $p_1 \/ (p_1 + p_2)$.
+  The identity for $eta$ from the previous lemma finishes the computation.
+]
+
+#corollary("Characterization", lean: "Meat.faddeevAxioms_iff")[
+  A function $H$ satisfies Faddeev's axioms if and only if there is a constant $c$ with $H(p) = c H_"S" (p)$ for every probability list $p$.
+][
+  One direction is Faddeev's theorem.
+  For the other, the axioms only evaluate $H$ on probability lists, where $H$ agrees with $c H_"S"$, which satisfies them.
+]
+
+The link to the measure-theoretic entropy of this chapter is the list of probabilities of the singletons.
+
+#proposition(
+  "Entropy of a measure as a list",
+  lean: ("Meat.measureEntropy_eq_listEntropy", "Meat.isProbList_measureReal"),
+)[
+  For a measure $nu$ on a finite set $S$, listed in any fixed order of $S$, $H(nu) = H_"S" ((nu_s)_(s in S))$.
+  If $nu$ is a probability measure, this list is a probability list.
+]
+
+#corollary("Axiomatic entropy of a random variable", lean: "Meat.FaddeevAxioms.eq_mul_entropy")[
+  If $H$ satisfies Faddeev's axioms, $mu$ is a probability measure and $X$ is measurable, then
+  $ H((X_* mu)_s)_(s in S) = H(1 / 2, 1 / 2) / (log 2) H(X). $
+]
+
+Khinchin (1953) used a different set of axioms: continuity in all arguments, maximum at the uniform distribution, invariance under adding a zero, and the additivity rule $H(X, Y) = H(X) + H(Y given X)$.
+Faddeev asks for continuity only on two-point distributions, and his grouping rule is the special case of additivity in which $Y$ splits one value of $X$ into two.
+Khinchin's form is not formalized here.
+
 == Shannon-type inequalities
 #source("Meat.Shannon.Inequalities")
 
